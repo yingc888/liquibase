@@ -831,4 +831,13 @@ public class StringUtil {
     }
 
 
+    /** Check whether the value is the string literal 'null' */
+    public static boolean equalsNULL(String value){
+        return "NULL".equalsIgnoreCase(value);
+    }
+
+    /** Check whether the value null or the string literal 'null' */
+    public static boolean isNullOrEqualsNULL(String value){
+        return value == null || equalsNULL(value);
+    }
 }

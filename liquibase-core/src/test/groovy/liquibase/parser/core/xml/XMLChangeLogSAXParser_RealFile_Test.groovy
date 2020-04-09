@@ -424,7 +424,6 @@ public class XMLChangeLogSAXParser_RealFile_Test extends Specification {
         def path = "liquibase/parser/core/xml/testCasesChangeLog.xml"
         DatabaseChangeLog changeLog = new XMLChangeLogSAXParser().parse(path, new ChangeLogParameters(), new JUnitResourceAccessor());
 
-
         then: "comment in sql is parsed correctly"
         changeLog.getChangeSet(path, "nvoxland", "comment in sql").comments == "This is a changeSet level comment"
         ((RawSQLChange) changeLog.getChangeSet(path, "nvoxland", "comment in sql").changes[0]).comment == "There is a comment in the SQL"
@@ -562,7 +561,6 @@ public class XMLChangeLogSAXParser_RealFile_Test extends Specification {
         ((AddColumnChange) changeLog.getChangeSet(path, "nvoxland", "different object types for column").changes[1]).columns[5].defaultValueSequenceNext.toString() == "seq_test"
 
         ((CreateIndexChange) changeLog.getChangeSet(path, "nvoxland", "different object types for column").changes[2]).columns[0].name == "id"
-        assert ((CreateIndexChange) changeLog.getChangeSet(path, "nvoxland", "different object types for column").changes[2]).columns[0].constraints.isUnique()
 
         ((LoadDataChange) changeLog.getChangeSet(path, "nvoxland", "different object types for column").changes[3]).columns[0].name == "id"
         ((LoadDataChange) changeLog.getChangeSet(path, "nvoxland", "different object types for column").changes[3]).columns[1].name == "new_col"
@@ -574,19 +572,27 @@ public class XMLChangeLogSAXParser_RealFile_Test extends Specification {
         and: "forms of update parse correctly"
         ((UpdateDataChange) changeLog.getChangeSet(path, "nvoxland", "update with whereParams").changes[0]).tableName == "updateTest"
         ((UpdateDataChange) changeLog.getChangeSet(path, "nvoxland", "update with whereParams").changes[0]).where == "id=:value and other_val=:value"
-        ((UpdateDataChange) changeLog.getChangeSet(path, "nvoxland", "update with whereParams").changes[0]).whereParams.size() == 2
-        ((UpdateDataChange) changeLog.getChangeSet(path, "nvoxland", "update with whereParams").changes[0]).whereParams[0].valueNumeric == 134
-        ((UpdateDataChange) changeLog.getChangeSet(path, "nvoxland", "update with whereParams").changes[0]).whereParams[1].name == "other_val"
-        ((UpdateDataChange) changeLog.getChangeSet(path, "nvoxland", "update with whereParams").changes[0]).whereParams[1].valueNumeric == 768
+        UpdateDataChange update0 = (UpdateDataChange) changeLog.getChangeSet(path, "nvoxland", "update with whereParams").changes[0]
+        update0.columns.size() == 3
+        update0.columns[0].name == "varcharColumn"
+        update0.columns[0].value == "new column 1 value"
+        update0.columns[1].name == "dateCol"
+        update0.columns[2].name == "intCol"
+        update0.columns[2].valueNumeric == 11
+        update0.whereParams.size() == 2
+        update0.whereParams[0].valueNumeric == 134
+        update0.whereParams[1].name == "other_val"
+        update0.whereParams[1].valueNumeric == 768
 
         ((UpdateDataChange) changeLog.getChangeSet(path, "nvoxland", "update with whereParams").changes[1]).tableName == "updateTest"
         ((UpdateDataChange) changeLog.getChangeSet(path, "nvoxland", "update with whereParams").changes[1]).where == "id=2"
         ((UpdateDataChange) changeLog.getChangeSet(path, "nvoxland", "update with whereParams").changes[1]).whereParams.size() == 0
 
         and: "shell commmand parses correctly"
-        ((ExecuteShellCommandChange) changeLog.getChangeSet(path, "nvoxland", "shell command").changes[0]).executable == "/usr/bin/test"
-        ((ExecuteShellCommandChange) changeLog.getChangeSet(path, "nvoxland", "shell command").changes[0]).os == ["linux", "mac"]
-        ((ExecuteShellCommandChange) changeLog.getChangeSet(path, "nvoxland", "shell command").changes[0]).args == ["-out", "-test"]
+        ExecuteShellCommandChange exec = (ExecuteShellCommandChange) changeLog.getChangeSet(path, "nvoxland", "shell command").changes[0]
+        exec.executable == "/usr/bin/test"
+        exec.os == "linux,mac"
+        exec.getStringArgs() == ["-out", "-test"]
 
         and: "view change parsed correctly"
         ((CreateViewChange) changeLog.getChangeSet(path, "nvoxland", "view creation").changes[0]).viewName == "test_view"

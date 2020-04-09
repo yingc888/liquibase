@@ -21,16 +21,15 @@ import liquibase.util.StringUtil;
 import java.util.ArrayList;
 import java.util.List;
 
+import static liquibase.change.ChangeParameterMetaData.ALL;
+
 /**
  * Creates a new table.
  */
 @DatabaseChange(name="createTable", description = "Create Table", priority = ChangeMetaData.PRIORITY_DEFAULT)
-public class CreateTableChange extends AbstractChange implements ChangeWithColumns<ColumnConfig> {
+public class CreateTableChange extends AbstractTableChange implements ChangeWithColumns<ColumnConfig> {
 
     private List<ColumnConfig> columns;
-    private String catalogName;
-    private String schemaName;
-    private String tableName;
     private String tablespace;
     private String remarks;
 
@@ -205,7 +204,7 @@ public class CreateTableChange extends AbstractChange implements ChangeWithColum
     }
 
     @Override
-    @DatabaseChangeProperty(requiredForDatabase = "all")
+    @DatabaseChangeProperty(description = "Column definitions", requiredForDatabase = ALL)
     public List<ColumnConfig> getColumns() {
         if (columns == null) {
             return new ArrayList<>();
@@ -218,33 +217,7 @@ public class CreateTableChange extends AbstractChange implements ChangeWithColum
         this.columns = columns;
     }
 
-    @DatabaseChangeProperty(since = "3.0")
-    public String getCatalogName() {
-        return catalogName;
-    }
-
-    public void setCatalogName(String catalogName) {
-        this.catalogName = catalogName;
-    }
-
-    public String getSchemaName() {
-        return schemaName;
-    }
-
-    public void setSchemaName(String schemaName) {
-        this.schemaName = schemaName;
-    }
-
-    @DatabaseChangeProperty()
-    public String getTableName() {
-        return tableName;
-    }
-
-    public void setTableName(String tableName) {
-        this.tableName = tableName;
-    }
-
-
+    @DatabaseChangeProperty(description = "Name of the tablespace, the table created in")
     public String getTablespace() {
         return tablespace;
     }
@@ -258,6 +231,7 @@ public class CreateTableChange extends AbstractChange implements ChangeWithColum
         columns.add(column);
     }
 
+    @DatabaseChangeProperty(description = "Comments stored for the table")
     public String getRemarks() {
         return remarks;
     }
