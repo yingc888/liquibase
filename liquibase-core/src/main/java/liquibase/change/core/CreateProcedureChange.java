@@ -154,7 +154,6 @@ public class CreateProcedureChange extends AbstractChange implements DbmsTargete
         this.dbms = dbms;
     }
 
-    @DatabaseChangeProperty(isChangeProperty = false, description = "TODO: NOT USED!  NESTED_OBJECT in XSD")
     public String getComments() {
         return comments;
     }
