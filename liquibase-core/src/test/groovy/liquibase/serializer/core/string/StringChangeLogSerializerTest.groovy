@@ -6,28 +6,14 @@ import liquibase.test.JUnitResourceAccessor
 import spock.lang.Specification
 import spock.lang.Unroll;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.fail
 
-import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
-import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-import java.util.SortedSet;
-import java.util.TreeSet;
+import java.lang.reflect.Type
 
-import liquibase.change.*;
-import liquibase.change.DatabaseChangeProperty;
+import liquibase.change.*
 import liquibase.change.core.*;
 import liquibase.change.custom.CustomChangeWrapper;
 import liquibase.change.custom.CustomSqlChange;
@@ -39,8 +25,7 @@ import liquibase.resource.ResourceAccessor;
 import liquibase.statement.DatabaseFunction;
 
 import liquibase.statement.SequenceCurrentValueFunction;
-import liquibase.statement.SequenceNextValueFunction;
-import org.junit.Test;
+import liquibase.statement.SequenceNextValueFunction
 
 public class StringChangeLogSerializerTest extends Specification {
 
@@ -134,7 +119,7 @@ public class StringChangeLogSerializerTest extends Specification {
         AddForeignKeyConstraintChange change = new AddForeignKeyConstraintChange();
 
         then:
-        new StringChangeLogSerializer().serialize(change, false) == "addForeignKeyConstraint:[]"
+        new StringChangeLogSerializer().serialize(change, false) == "addForeignKeyConstraint:[\n    validate=\"true\"\n]"
 
         when:
         change.setBaseTableName("TABLE_NAME");
@@ -162,6 +147,7 @@ public class StringChangeLogSerializerTest extends Specification {
                 "    referencedColumnNames=\"COLA, COLB\"\n" +
                 "    referencedTableName=\"REF_TABLE\"\n" +
                 "    referencedTableSchemaName=\"REF_SCHEM\"\n" +
+                "    validate=\"true\"\n" +
                 "]"
 
     }
@@ -171,7 +157,7 @@ public class StringChangeLogSerializerTest extends Specification {
         AddUniqueConstraintChange change = new AddUniqueConstraintChange();
 
         then:
-        new StringChangeLogSerializer().serialize(change, false) == "addUniqueConstraint:[]"
+        new StringChangeLogSerializer().serialize(change, false) == "addUniqueConstraint:[\n    validate=\"true\"\n]"
 
         when:
         change.setTableName("TABLE_NAME");
@@ -193,6 +179,7 @@ public class StringChangeLogSerializerTest extends Specification {
                 "    schemaName=\"BASE_SCHEM\"\n" +
                 "    tableName=\"TABLE_NAME\"\n" +
                 "    tablespace=\"TABLESPACE1\"\n" +
+                "    validate=\"true\"\n" +
                 "]"
 
     }
@@ -365,6 +352,9 @@ public class StringChangeLogSerializerTest extends Specification {
                         } else if (typeToCreate.equals(String.class)) {
                             collection.add(createString());
                             collection.add(createString());
+                        } else if (typeToCreate.equals(ExecuteShellCommandChange.Arg.class)) {
+                            collection.add(new ExecuteShellCommandChange.Arg(createString()));
+                            collection.add(new ExecuteShellCommandChange.Arg(createString()));
                         } else {
                             throw new RuntimeException("Unknown generic type for " + clazz.getName() + "." + field.getName() + ": " + typeToCreate.getName());
                         }
