@@ -23,8 +23,37 @@ jobs:
     #   name: "Run Liquibase Unit Tests"
       #script:
     - stage: "Integration Tests"
-      name: "Run Liquibase Integration Tests"
-      script: mvn integration-test
+      name: "Postgres Integration Tests"
+      env: DB=postgres
+      # name: "Postgres 12 Integration Tests"
+      # env: DB=postgres12
+      # name: "Postgres 11 Integration Tests"
+      # env: DB=postgres11
+      # name: "Postgres 10 Integration Tests"
+      # env: DB=postgres10
+      name: "MySQL 5 Integration Tests"
+      env: DB=mysql5
+      # name: "MariaDB 10 Integration Tests"
+      # env: DB=mariadb19
+      
+script: mvn integration-test $DB
+# and have the travis.py script call a specific docker compose script. having just one isn't gonna cut it for us anymore.
+# script: travis.py $DB
+
+
+language: python
+jobs:
+  include:
+  - name: "3.5 Unit Test"
+    python: "3.5"
+    env: TEST_SUITE=suite_3_5_unit
+  - name: "3.5 Integration Tests"
+    python: "3.5"
+    env: TEST_SUITE=suite_3_5_integration
+  - name: "pypy Unit Tests"
+    python: "pypy"
+    env: TEST_SUITE=suite_pypy_unit
+script: ./test.py $TEST_SUITE    
 
 
 after_script: 
