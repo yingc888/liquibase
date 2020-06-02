@@ -24,7 +24,7 @@ jobs:
       #script:
     - stage: "Integration Tests"
       name: "Run Liquibase Integration Tests"
-      script: mvn clean org.jacoco:jacoco-maven-plugin:prepare-agent integration-test
+      script: mvn integration-test
 
 
 after_script: 
