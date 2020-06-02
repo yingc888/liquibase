@@ -24,9 +24,8 @@ public class DatabaseTestConnectionUtil {
         catch (Exception e) {
             logger.severe("Unable to initialize database connection", e);
             database = null;
+            return database;
         }
-        // Do not count the test as successful if we skip it because of a failed login. Count it as skipped instead.
-        // org.junit.Assume.assumeTrue(database != null);
         init(database);
         return database;
     }

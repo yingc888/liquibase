@@ -25,9 +25,9 @@ class HelloTest extends Specification {
   @Unroll
   def "test postgres"() {
     given:
-    // Database database = null// properly initialized database
-    Database database = new PostgresDatabase();
-    database = DatabaseTestConnectionUtil.initializeDatabase(database)
+    Database database = DatabaseTestConnectionUtil.initializeDatabase(new PostgresDatabase())
+    // Do not count the test as successful if we skip it because of a failed login. Count it as skipped instead.
+    org.junit.Assume.assumeTrue(database != null)
     String changelogDir = "pgsql"
     String changelogPath = "changelogs/" + changelogDir + changelog
 
