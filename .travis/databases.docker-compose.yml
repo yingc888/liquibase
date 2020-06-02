@@ -103,7 +103,7 @@ services:
     ports:
       - "3050:3050"
     environment:
-      - ISC_PASSWORD: LiquibasePass1
+      ISC_PASSWORD: LiquibasePass1
     volumes:
       - "./firebird-init.sh:/docker-entrypoint-initdb.d/firebird-init.sh"
 
@@ -122,8 +122,8 @@ services:
       - "27018:27018"
       - "27883:27883"
     environment:
-      - LICENSE: accept
-      - STORAGE: local
+      LICENSE: accept
+      STORAGE: local
     volumes:
       - "./informix-init.sh:/docker-entrypoint-initdb.d/informix-init.sh"
 
