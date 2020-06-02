@@ -42,8 +42,8 @@ jobs:
       # env: DB=mariadb19
       
 
-after_script: 
-  - docker-compose -f ./.travis/databases.docker-compose.$DB.yml down
+# after_script: 
+  # - docker-compose -f ./.travis/databases.docker-compose.$DB.yml down
 
 cache:
   directories:
