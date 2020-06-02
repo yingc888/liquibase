@@ -10,7 +10,8 @@ env:
 services:
   - docker
 
-install: 
+install:
+  - true
   - cp ./.travis/maven.settings.xml $HOME/.m2/settings.xml
   - docker-compose -f ./.travis/databases.docker-compose.yml up -d
 jobs:
