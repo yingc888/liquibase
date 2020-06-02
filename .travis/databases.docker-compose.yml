@@ -53,8 +53,41 @@ services:
       LICENSE: accept
     volumes:
       - "./db2-init.sh:/docker-entrypoint-initdb.d/db2-init.sh"
-      
-        
+
+# docker run -e 'ACCEPT_EULA=Y' -e 'SA_PASSWORD=yourStrong(!)Password' -p 1433:1433 -d mcr.microsoft.com/mssql/server:2017-latest
+# Microsoft SQL Server
+# @todo There are two special integration tests for MSSQL Server: MssqlCaseSensitive and MssqlJtds. We need an extension to this naming mechanism to allow these tests to use different URLs.
+# integration.test.mssql.url=jdbc:sqlserver://localhost:1433;databaseName=liquibase
+
+  mssql-2017:
+    image: mcr.microsoft.com/mssql/server:2017-latest
+    ports:
+      - "1433:1433"
+    restart: always
+    environment:
+      ACCEPT_EULA: Y
+      SA_PASSWORD: LbRootPass1
+    volumes:
+      - "./mssql-init.sh:/docker-entrypoint-initdb.d/mssql-init.sh"
+
+
+
+
+# Apache Derby embedded SQL database
+# integration.test.derby.username=liquibase
+# integration.test.derby.password=liquibase
+# integration.test.derby.url=jdbc:derby:liquibase;create=true
+  derby-latest:
+    # not a fan of pulling rando docker images off of docker hub...maybe we should move this to the liquibase docker org and put up our own
+    # of course, that begs the question of whether we should do that for sybase, sql anywhere, oracle, etc... and do a 'docker login' prior to the pull like the SAP HANA extension does in their .travis.yml
+    image: az82/docker-derby:latest
+    ports:
+      - "1527:1527"
+    restart: always
+    environment:
+      FOO: bar
+    volumes:
+      - "./derby-init.sh/docker-entrypoint-initdb.d/derby-init.sh"
 
 
 
@@ -65,22 +98,12 @@ services:
 
 
 
-
-
-# Oracle RDBMS running with SID=XE on localhost (XE=Oracle Express Edition)
-integration.test.oracle.username=liquibase
-integration.test.oracle.password=liquibase
-integration.test.oracle.url=jdbc:oracle:thin:@//localhost/XE
 
 # SAP (formerly Siebel) Adaptive SQL Anywhere
 integration.test.asany.username=liquibase
 integration.test.asany.password=liquibase
 integration.test.asany.url=jdbc:sybase:Tds:localhost:2638?ServiceName=liquibase
 
-# Apache Derby embedded SQL database
-integration.test.derby.username=liquibase
-integration.test.derby.password=liquibase
-integration.test.derby.url=jdbc:derby:liquibase;create=true
 
 # Firebird SQL
 # WARNING: The 3.0.0 JDBC driver for Firebird does not support encryption. You must set WireCrypt = Enabled
@@ -102,11 +125,14 @@ integration.test.informix.password=liquibase
 integration.test.informix.url=jdbc:informix-sqli://localhost:9090/liquibase:informixserver=ol_informix1210;\
   DB_LOCALE=en_us.utf8;GL_DATE=%iY-%m-%d
 
-# Microsoft SQL Server
-# @todo There are two special integration tests for MSSQL Server: MssqlCaseSensitive and MssqlJtds. We need an extension to this naming mechanism to allow these tests to use different URLs.
-integration.test.mssql.url=jdbc:sqlserver://localhost:1433;databaseName=liquibase
 
 
 # SQLite Database
 integration.test.sqlite.url=jdbc:sqlite:***TEMPDIR***/liquibase.db
 
+
+
+# Oracle RDBMS running with SID=XE on localhost (XE=Oracle Express Edition)
+integration.test.oracle.username=liquibase
+integration.test.oracle.password=liquibase
+integration.test.oracle.url=jdbc:oracle:thin:@//localhost/XE
