@@ -26,6 +26,7 @@ jobs:
     - stage: "Integration Tests"
     - name: "Postgres Integration Tests"
       env: DB=postgres
+      script: docker-compose -f ./.travis/databases.docker-compose.$DB.yml up -d && mvn integration-test
       # name: "Postgres 12 Integration Tests"
       # env: DB=postgres12
       # name: "Postgres 11 Integration Tests"
@@ -34,12 +35,12 @@ jobs:
       # env: DB=postgres10
     - name: "MySQL Integration Tests"
       env: DB=mysql
+      script: docker-compose -f ./.travis/databases.docker-compose.$DB.yml up -d && mvn integration-test
       #- name: "MySQL 5 Integration Tests"
       #env: DB=mysql5
       # name: "MariaDB 10 Integration Tests"
       # env: DB=mariadb19
       
-script: docker-compose -f ./.travis/databases.docker-compose.$DB.yml up -d && mvn integration-test
 
 after_script: 
   - docker-compose -f ./.travis/databases.docker-compose.$DB.yml down
