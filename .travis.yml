@@ -10,10 +10,15 @@ env:
 services:
   - docker
 
-install: cp ./.travis/maven.settings.xml $HOME/.m2/settings.xml
-before_script: docker-compose -f ./.travis/databases.docker-compose.yml up -d
-script:
-  - mvn clean org.jacoco:jacoco-maven-plugin:prepare-agent integration-test verify -Dliquibase.version.qualifier="-${TRAVIS_BRANCH}" -Dbuild.number=${TRAVIS_BUILD_NUMBER} -Dbuild.commit=${TRAVIS_COMMIT}
+install: 
+  - cp ./.travis/maven.settings.xml $HOME/.m2/settings.xml
+  - docker-compose -f ./.travis/databases.docker-compose.yml up -d
+jobs:
+  include:
+    - stage: "Build"
+    - name: "Build Liquibase"
+    - script: mvn clean org.jacoco:jacoco-maven-plugin:prepare-agent integration-test verify -Dliquibase.version.qualifier="-${TRAVIS_BRANCH}" -Dbuild.number=${TRAVIS_BUILD_NUMBER} -Dbuild.commit=${TRAVIS_COMMIT}
+
 after_script: 
   - docker-compose -f ./.travis/databases.docker-compose.yml down
 
