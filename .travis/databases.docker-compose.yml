@@ -87,52 +87,70 @@ services:
     environment:
       FOO: bar
     volumes:
-      - "./derby-init.sh/docker-entrypoint-initdb.d/derby-init.sh"
+      - "./derby-init.sh:/docker-entrypoint-initdb.d/derby-init.sh"
 
-
-
-
-
-
-
-
-
-
-
-# SAP (formerly Siebel) Adaptive SQL Anywhere
-integration.test.asany.username=liquibase
-integration.test.asany.password=liquibase
-integration.test.asany.url=jdbc:sybase:Tds:localhost:2638?ServiceName=liquibase
 
 
 # Firebird SQL
 # WARNING: The 3.0.0 JDBC driver for Firebird does not support encryption. You must set WireCrypt = Enabled
 # in your firebird.conf and restart the database server for this to work.
 # To use the 3.0.0 JDBC driver, you must specify the charSet attribute (UTF-8 should work for most users).
-integration.test.firebird.url=jdbc:firebirdsql:localhost/3050:***TEMPDIR***/liquibase.fdb?charSet=utf-8
+# integration.test.firebird.url=jdbc:firebirdsql:localhost/3050:***TEMPDIR***/liquibase.fdb?charSet=utf-8
 
-# H2 embedded SQL database
-# integration.test.h2.url=jdbc:h2:mem:liquibase
-integration.test.h2.url=jdbc:h2:***TEMPDIR***/liquibase
-
-# Hyper SQL (hsqldb) embedded SQL database
-integration.test.hsqldb.url=jdbc:hsqldb:mem:liquibase
+  firebird-3.0.4:
+    # again, not a fan of rando docker hub images...
+    image: jacobalberty/firebird:3.0.4
+    ports:
+      - "3050:3050"
+    environment:
+      - ISC_PASSWORD: LiquibasePass1
+    volumes:
+      - "./firebird-init.sh:/docker-entrypoint-initdb.d/firebird-init.sh"
 
 # IBM Informix SQL Dynamic Server. Note the special requirements for Unicode (DB_LOCALE) and fixed setting for
 # DATE literals (we need this for specifying DATE column default values that are literals).
-integration.test.informix.username=liquibase
-integration.test.informix.password=liquibase
-integration.test.informix.url=jdbc:informix-sqli://localhost:9090/liquibase:informixserver=ol_informix1210;\
-  DB_LOCALE=en_us.utf8;GL_DATE=%iY-%m-%d
+# integration.test.informix.username=liquibase
+# integration.test.informix.password=liquibase
+# integration.test.informix.url=jdbc:informix-sqli://localhost:9090/liquibase:informixserver=ol_informix1210;\DB_LOCALE=en_us.utf8;GL_DATE=%iY-%m-%d
+# docker run -it --name ifx --privileged -p 9088:9088 -p 9089:9089 -p 27017:27017 -p 27018:27018 -p 27883:27883 -e LICENSE=accept ibmcom/informix-innovator-c:latest
+  informix-14.10:
+    image: ibmcom/informix-innovator-c:14.10.FC1
+    ports:
+      - "9088:9088"
+      - "9089:9089"
+      - "27017:27017"
+      - "27018:27018"
+      - "27883:27883"
+    environment:
+      - LICENSE: accept
+      - STORAGE: local
+    volumes:
+      - "./informix-init.sh:/docker-entrypoint-initdb.d/informix-init.sh"
 
+###############################################################################
+# embedded below, do we need docker for these...?
+###############################################################################
 
+# H2 embedded SQL database
+# integration.test.h2.url=jdbc:h2:mem:liquibase
+# integration.test.h2.url=jdbc:h2:***TEMPDIR***/liquibase
+
+# Hyper SQL (hsqldb) embedded SQL database
+# integration.test.hsqldb.url=jdbc:hsqldb:mem:liquibase
 
 # SQLite Database
-integration.test.sqlite.url=jdbc:sqlite:***TEMPDIR***/liquibase.db
+# integration.test.sqlite.url=jdbc:sqlite:***TEMPDIR***/liquibase.db
 
-
+###############################################################################
+# aberrant databases we need to setup in our artifactory/docker.hub
+###############################################################################
 
 # Oracle RDBMS running with SID=XE on localhost (XE=Oracle Express Edition)
-integration.test.oracle.username=liquibase
-integration.test.oracle.password=liquibase
-integration.test.oracle.url=jdbc:oracle:thin:@//localhost/XE
+# integration.test.oracle.username=liquibase
+# integration.test.oracle.password=liquibase
+# integration.test.oracle.url=jdbc:oracle:thin:@//localhost/XE
+
+# SAP (formerly Siebel) Adaptive SQL Anywhere
+# integration.test.asany.username=liquibase
+# integration.test.asany.password=liquibase
+# integration.test.asany.url=jdbc:sybase:Tds:localhost:2638?ServiceName=liquibase
