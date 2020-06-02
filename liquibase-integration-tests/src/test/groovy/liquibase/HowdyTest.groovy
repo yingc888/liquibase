@@ -9,7 +9,8 @@ import liquibase.database.DatabaseFactory;
 import liquibase.database.core.OracleDatabase;
 import liquibase.database.core.PostgresDatabase;
 import liquibase.database.jvm.JdbcConnection;
-import liquibase.datatype.DataTypeFactory;
+import liquibase.datatype.DataTypeFactory
+import liquibase.dbtest.DatabaseTestConnectionUtil;
 import liquibase.diff.DiffGeneratorFactory;
 import liquibase.diff.DiffResult;
 import liquibase.diff.compare.CompareControl;

@@ -2,12 +2,12 @@ package liquibase
 
 import ch.qos.logback.classic.Level
 import liquibase.database.Database
+import liquibase.database.core.PostgresDatabase
 import liquibase.util.StringUtils
+import liquibase.dbtest.DatabaseTestConnectionUtil
 import org.slf4j.LoggerFactory
-import spock.lang.Ignore
 import spock.lang.Specification
 import spock.lang.Unroll
-
 
 class HelloTest extends Specification {
 
@@ -20,11 +20,12 @@ class HelloTest extends Specification {
   }
 
 
-  @Ignore
   @Unroll
   def "test postgres"() {
     given:
-    Database database = null// properly initialized database
+    // Database database = null// properly initialized database
+    Database database = new PostgresDatabase();
+    database = DatabaseTestConnectionUtil.initializeDatabase(database)
     String changelogDir = "pgsql"
     String changelogPath = "changelogs/" + changelogDir + changelog
 
