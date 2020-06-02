@@ -1,18 +1,18 @@
 version: '3.3'
 
 services:
-  mysql:
-    image: mysql:5
-    ports:
-      - "33061:3306"
-    restart: always
-    environment:
-      MYSQL_ROOT_PASSWORD: LbRootPass1
-      MYSQL_DATABASE: lbcat
-      MYSQL_USER: lbuser
-      MYSQL_PASSWORD: LiquibasePass1
-    volumes:
-      - "./mysql-init.sql:/docker-entrypoint-initdb.d/mysql-init.sql"
+  # mysql:
+    # image: mysql:5
+    # ports:
+      # - "33061:3306"
+    # restart: always
+    # environment:
+      # MYSQL_ROOT_PASSWORD: LbRootPass1
+      # MYSQL_DATABASE: lbcat
+      # MYSQL_USER: lbuser
+      # MYSQL_PASSWORD: LiquibasePass1
+    # volumes:
+      # - "./mysql-init.sql:/docker-entrypoint-initdb.d/mysql-init.sql"
 
   postgres-12:
     image: postgres:12
@@ -26,49 +26,50 @@ services:
     volumes:
       - "./postgres-init.sh:/docker-entrypoint-initdb.d/postgres-init.sh"
 
-  mariadb-10:
-    image: mariadb:10
-    ports:
-      - "33062:3306"
-    restart: always
-    environment:
-      MYSQL_ROOT_PASSWORD: LbRootPass1
-      MYSQL_DATABASE: lbcat
-      MYSQL_USER: lbuser
-      MYSQL_PASSWORD: LiquibasePass1
-    volumes:
-      - "./mysql-init.sql:/docker-entrypoint-initdb.d/mysql-init.sql"
+  # mariadb-10:
+    # image: mariadb:10
+    # ports:
+      # - "33062:3306"
+    # restart: always
+    # environment:
+      # MYSQL_ROOT_PASSWORD: LbRootPass1
+      # MYSQL_DATABASE: lbcat
+      # MYSQL_USER: lbuser
+      # MYSQL_PASSWORD: LiquibasePass1
+    # volumes:
+      # - "./mysql-init.sql:/docker-entrypoint-initdb.d/mysql-init.sql"
 
-  # IBM DB2 LUW (LUW = Version for Linux, Unix and Windows)
-  # integration.test.db2.url=jdbc:db2://localhost:50000/liquibas:currentSchema=LIQUIBASE;
-  # docker run -itd --name mydb2 --privileged=true -p 50000:50000 -e LICENSE=accept -e DB2INST1_PASSWORD=<choose an instance password> -e DBNAME=testdb -v <db storage dir>:/database ibmcom/db2
-  db2-11.5.0.0a:
-    image: ibmcom/db2:11.5.0.0a
-    ports:
-      - "50000:50000"
-    restart: always
-    environment:
-      DB2INST1_PASSWORD: LbRootPass1
-      DBNAME: LIQUIBASE
-      LICENSE: accept
-    volumes:
-      - "./db2-init.sh:/docker-entrypoint-initdb.d/db2-init.sh"
+# IBM DB2 LUW (LUW = Version for Linux, Unix and Windows)
+# integration.test.db2.url=jdbc:db2://localhost:50000/liquibas:currentSchema=LIQUIBASE;
+# docker run -itd --name mydb2 --privileged=true -p 50000:50000 -e LICENSE=accept -e DB2INST1_PASSWORD=<choose an instance password> -e DBNAME=testdb -v <db storage dir>:/database ibmcom/db2
+
+  # db2-11.5.0.0a:
+    # image: ibmcom/db2:11.5.0.0a
+    # ports:
+      # - "50000:50000"
+    # restart: always
+    # environment:
+      # DB2INST1_PASSWORD: LbRootPass1
+      # DBNAME: LIQUIBASE
+      # LICENSE: accept
+    # volumes:
+      # - "./db2-init.sh:/docker-entrypoint-initdb.d/db2-init.sh"
 
 # docker run -e 'ACCEPT_EULA=Y' -e 'SA_PASSWORD=yourStrong(!)Password' -p 1433:1433 -d mcr.microsoft.com/mssql/server:2017-latest
 # Microsoft SQL Server
 # @todo There are two special integration tests for MSSQL Server: MssqlCaseSensitive and MssqlJtds. We need an extension to this naming mechanism to allow these tests to use different URLs.
 # integration.test.mssql.url=jdbc:sqlserver://localhost:1433;databaseName=liquibase
 
-  mssql-2017:
-    image: mcr.microsoft.com/mssql/server:2017-latest
-    ports:
-      - "1433:1433"
-    restart: always
-    environment:
-      ACCEPT_EULA: Y
-      SA_PASSWORD: LbRootPass1
-    volumes:
-      - "./mssql-init.sh:/docker-entrypoint-initdb.d/mssql-init.sh"
+  # mssql-2017:
+    # image: mcr.microsoft.com/mssql/server:2017-latest
+    # ports:
+      # - "1433:1433"
+    # restart: always
+    # environment:
+      # ACCEPT_EULA: Y
+      # SA_PASSWORD: LbRootPass1
+    # volumes:
+      # - "./mssql-init.sh:/docker-entrypoint-initdb.d/mssql-init.sh"
 
 
 
@@ -77,17 +78,18 @@ services:
 # integration.test.derby.username=liquibase
 # integration.test.derby.password=liquibase
 # integration.test.derby.url=jdbc:derby:liquibase;create=true
-  derby-latest:
+
+  # derby-latest:
     # not a fan of pulling rando docker images off of docker hub...maybe we should move this to the liquibase docker org and put up our own
     # of course, that begs the question of whether we should do that for sybase, sql anywhere, oracle, etc... and do a 'docker login' prior to the pull like the SAP HANA extension does in their .travis.yml
-    image: az82/docker-derby:latest
-    ports:
-      - "1527:1527"
-    restart: always
-    environment:
-      FOO: bar
-    volumes:
-      - "./derby-init.sh:/docker-entrypoint-initdb.d/derby-init.sh"
+    # image: az82/docker-derby:latest
+    # ports:
+      # - "1527:1527"
+    # restart: always
+    # environment:
+      # FOO: bar
+    # volumes:
+      # - "./derby-init.sh:/docker-entrypoint-initdb.d/derby-init.sh"
 
 
 
@@ -97,15 +99,15 @@ services:
 # To use the 3.0.0 JDBC driver, you must specify the charSet attribute (UTF-8 should work for most users).
 # integration.test.firebird.url=jdbc:firebirdsql:localhost/3050:***TEMPDIR***/liquibase.fdb?charSet=utf-8
 
-  firebird-3.0.4:
+  # firebird-3.0.4:
     # again, not a fan of rando docker hub images...
-    image: jacobalberty/firebird:3.0.4
-    ports:
-      - "3050:3050"
-    environment:
-      ISC_PASSWORD: LiquibasePass1
-    volumes:
-      - "./firebird-init.sh:/docker-entrypoint-initdb.d/firebird-init.sh"
+    # image: jacobalberty/firebird:3.0.4
+    # ports:
+      # - "3050:3050"
+    # environment:
+      # ISC_PASSWORD: LiquibasePass1
+    # volumes:
+      # - "./firebird-init.sh:/docker-entrypoint-initdb.d/firebird-init.sh"
 
 # IBM Informix SQL Dynamic Server. Note the special requirements for Unicode (DB_LOCALE) and fixed setting for
 # DATE literals (we need this for specifying DATE column default values that are literals).
@@ -113,19 +115,20 @@ services:
 # integration.test.informix.password=in4mix
 # integration.test.informix.url=jdbc:informix-sqli://localhost:9090/liquibase:informixserver=ol_informix1210;\DB_LOCALE=en_us.utf8;GL_DATE=%iY-%m-%d
 # docker run -it --name ifx --privileged -p 9088:9088 -p 9089:9089 -p 27017:27017 -p 27018:27018 -p 27883:27883 -e LICENSE=accept ibmcom/informix-innovator-c:latest
-  informix-14.10:
-    image: ibmcom/informix-innovator-c:14.10.FC1
-    ports:
-      - "9088:9088"
-      - "9089:9089"
-      - "27017:27017"
-      - "27018:27018"
-      - "27883:27883"
-    environment:
-      LICENSE: accept
-      STORAGE: local
-    volumes:
-      - "./informix-init.sh:/docker-entrypoint-initdb.d/informix-init.sh"
+
+  # informix-14.10:
+    # image: ibmcom/informix-innovator-c:14.10.FC1IE
+    # ports:
+      # - "9088:9088"
+      # - "9089:9089"
+      # - "27017:27017"
+      # - "27018:27018"
+      # - "27883:27883"
+    # environment:
+      # LICENSE: accept
+      # STORAGE: local
+    # volumes:
+      # - "./informix-init.sh:/docker-entrypoint-initdb.d/informix-init.sh"
 
 ###############################################################################
 # embedded below, do we need docker for these...?
