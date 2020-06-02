@@ -23,7 +23,7 @@ jobs:
     #   name: "Run Liquibase Unit Tests"
       #script:
     - stage: "Integration Tests"
-      name: "Postgres Integration Tests"
+    - name: "Postgres Integration Tests"
       env: DB=postgres
       # name: "Postgres 12 Integration Tests"
       # env: DB=postgres12
@@ -31,7 +31,7 @@ jobs:
       # env: DB=postgres11
       # name: "Postgres 10 Integration Tests"
       # env: DB=postgres10
-      name: "MySQL 5 Integration Tests"
+    - name: "MySQL 5 Integration Tests"
       env: DB=mysql5
       # name: "MariaDB 10 Integration Tests"
       # env: DB=mariadb19
