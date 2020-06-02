@@ -25,3 +25,88 @@ services:
       POSTGRES_DB: lbcat
     volumes:
       - "./postgres-init.sh:/docker-entrypoint-initdb.d/postgres-init.sh"
+
+  mariadb-10:
+    image: mariadb:10
+    ports:
+      - "33062:3306"
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: LbRootPass1
+      MYSQL_DATABASE: lbcat
+      MYSQL_USER: lbuser
+      MYSQL_PASSWORD: LiquibasePass1
+    volumes:
+      - "./mysql-init.sql:/docker-entrypoint-initdb.d/mysql-init.sql"
+
+  # IBM DB2 LUW (LUW = Version for Linux, Unix and Windows)
+  # integration.test.db2.url=jdbc:db2://localhost:50000/liquibas:currentSchema=LIQUIBASE;
+  # docker run -itd --name mydb2 --privileged=true -p 50000:50000 -e LICENSE=accept -e DB2INST1_PASSWORD=<choose an instance password> -e DBNAME=testdb -v <db storage dir>:/database ibmcom/db2
+  db2-11.5.0.0a:
+    image: ibmcom/db2:11.5.0.0a
+    ports:
+      - "50000:50000"
+    restart: always
+    environment:
+      DB2INST1_PASSWORD: LbRootPass1
+      DBNAME: LIQUIBASE
+      LICENSE: accept
+    volumes:
+      - "./db2-init.sh:/docker-entrypoint-initdb.d/db2-init.sh"
+      
+        
+
+
+
+
+
+
+
+
+
+
+
+
+# Oracle RDBMS running with SID=XE on localhost (XE=Oracle Express Edition)
+integration.test.oracle.username=liquibase
+integration.test.oracle.password=liquibase
+integration.test.oracle.url=jdbc:oracle:thin:@//localhost/XE
+
+# SAP (formerly Siebel) Adaptive SQL Anywhere
+integration.test.asany.username=liquibase
+integration.test.asany.password=liquibase
+integration.test.asany.url=jdbc:sybase:Tds:localhost:2638?ServiceName=liquibase
+
+# Apache Derby embedded SQL database
+integration.test.derby.username=liquibase
+integration.test.derby.password=liquibase
+integration.test.derby.url=jdbc:derby:liquibase;create=true
+
+# Firebird SQL
+# WARNING: The 3.0.0 JDBC driver for Firebird does not support encryption. You must set WireCrypt = Enabled
+# in your firebird.conf and restart the database server for this to work.
+# To use the 3.0.0 JDBC driver, you must specify the charSet attribute (UTF-8 should work for most users).
+integration.test.firebird.url=jdbc:firebirdsql:localhost/3050:***TEMPDIR***/liquibase.fdb?charSet=utf-8
+
+# H2 embedded SQL database
+# integration.test.h2.url=jdbc:h2:mem:liquibase
+integration.test.h2.url=jdbc:h2:***TEMPDIR***/liquibase
+
+# Hyper SQL (hsqldb) embedded SQL database
+integration.test.hsqldb.url=jdbc:hsqldb:mem:liquibase
+
+# IBM Informix SQL Dynamic Server. Note the special requirements for Unicode (DB_LOCALE) and fixed setting for
+# DATE literals (we need this for specifying DATE column default values that are literals).
+integration.test.informix.username=liquibase
+integration.test.informix.password=liquibase
+integration.test.informix.url=jdbc:informix-sqli://localhost:9090/liquibase:informixserver=ol_informix1210;\
+  DB_LOCALE=en_us.utf8;GL_DATE=%iY-%m-%d
+
+# Microsoft SQL Server
+# @todo There are two special integration tests for MSSQL Server: MssqlCaseSensitive and MssqlJtds. We need an extension to this naming mechanism to allow these tests to use different URLs.
+integration.test.mssql.url=jdbc:sqlserver://localhost:1433;databaseName=liquibase
+
+
+# SQLite Database
+integration.test.sqlite.url=jdbc:sqlite:***TEMPDIR***/liquibase.db
+
