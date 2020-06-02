@@ -1,0 +1,21 @@
+version: '3.3'
+
+services:
+
+# docker run -e 'ACCEPT_EULA=Y' -e 'SA_PASSWORD=yourStrong(!)Password' -p 1433:1433 -d mcr.microsoft.com/mssql/server:2017-latest
+# Microsoft SQL Server
+# @todo There are two special integration tests for MSSQL Server: MssqlCaseSensitive and MssqlJtds. We need an extension to this naming mechanism to allow these tests to use different URLs.
+# integration.test.mssql.url=jdbc:sqlserver://localhost:1433;databaseName=liquibase
+
+  mssql-2017:
+    image: mcr.microsoft.com/mssql/server:2017-latest
+    ports:
+      - "1433:1433"
+    restart: always
+    environment:
+      ACCEPT_EULA: Y
+      SA_PASSWORD: LbRootPass1
+    volumes:
+      - "./mssql-init.sh:/docker-entrypoint-initdb.d/mssql-init.sh"
+
+

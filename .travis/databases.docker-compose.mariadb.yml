@@ -1,0 +1,15 @@
+version: '3.3'
+
+services:
+  mariadb-10:
+    image: mariadb:10
+    ports:
+      - "33062:3306"
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: LbRootPass1
+      MYSQL_DATABASE: lbcat
+      MYSQL_USER: lbuser
+      MYSQL_PASSWORD: LiquibasePass1
+    volumes:
+      - "./mysql-init.sql:/docker-entrypoint-initdb.d/mysql-init.sql"
