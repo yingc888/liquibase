@@ -13,7 +13,8 @@ services:
 install:
   - true
   - cp ./.travis/maven.settings.xml $HOME/.m2/settings.xml
-  - docker-compose -f ./.travis/databases.docker-compose.yml up -d
+# moved to below to allow for different docker database start based on the env
+#  - docker-compose -f ./.travis/databases.docker-compose.yml up -d
 jobs:
   include:
     # - stage: "Build"
@@ -31,17 +32,17 @@ jobs:
       # env: DB=postgres11
       # name: "Postgres 10 Integration Tests"
       # env: DB=postgres10
-    - name: "MySQL 5 Integration Tests"
-      env: DB=mysql5
+    - name: "MySQL Integration Tests"
+      env: DB=mysql
+      #- name: "MySQL 5 Integration Tests"
+      #env: DB=mysql5
       # name: "MariaDB 10 Integration Tests"
       # env: DB=mariadb19
       
-script: echo $DB && mvn integration-test
-# and have the travis.py script call a specific docker compose script. having just one isn't gonna cut it for us anymore.
-# script: travis.py $DB
+script: docker-compose -f ./.travis/databases.docker-compose.$DB.yml up -d && mvn integration-test
 
 after_script: 
-  - docker-compose -f ./.travis/databases.docker-compose.yml down
+  - docker-compose -f ./.travis/databases.docker-compose.$DB.yml down
 
 cache:
   directories:
