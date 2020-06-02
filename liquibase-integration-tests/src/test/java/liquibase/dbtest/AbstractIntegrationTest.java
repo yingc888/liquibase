@@ -135,14 +135,15 @@ public abstract class AbstractIntegrationTest {
             if (localProperties != null)
                 integrationTestProperties.load(localProperties);
 
-            String url = integrationTestProperties.getProperty("integration.test." + databaseManager + ".jdbcUrl");
+            String url = integrationTestProperties.getProperty("integration.test." + databaseManager + ".url");
             if (url == null)
                 return null;
 
             DatabaseTestURL testUrl = new DatabaseTestURL(databaseManager, url,
                 // These may be set to null if not defined as properties.
                 integrationTestProperties.getProperty("integration.test." + databaseManager + ".username"),
-                integrationTestProperties.getProperty("integration.test." + databaseManager + ".password")
+                integrationTestProperties.getProperty("integration.test." + databaseManager + ".password"),
+                integrationTestProperties.getProperty("integration.test." + databaseManager + ".defaultSchemaName")
             );
             return testUrl;
         } catch (IOException e) {

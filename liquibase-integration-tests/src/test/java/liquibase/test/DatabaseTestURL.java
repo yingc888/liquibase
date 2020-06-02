@@ -15,6 +15,7 @@ public class DatabaseTestURL {
     private String url;
     private String username;
     private String password;
+    private String defaultSchemaName;
 
     private String databaseManager;
 
@@ -31,11 +32,12 @@ public class DatabaseTestURL {
         this.databaseManager = databaseManager;
     }
 
-    public DatabaseTestURL(String databaseManager, String url, String username, String password) {
+    public DatabaseTestURL(String databaseManager, String url, String username, String password, String defaultSchemaName) {
         this.url = url;
         this.username = username;
         this.password = password;
         this.databaseManager = databaseManager;
+        this.defaultSchemaName = defaultSchemaName;
     }
 
     public String getDatabaseManager() {
@@ -60,5 +62,13 @@ public class DatabaseTestURL {
 
     public void setPassword(String password) {
         this.password = password;
+    }
+
+    public String getDefaultSchemaName() {
+        return defaultSchemaName;
+    }
+
+    public void setDefaultSchemaName(String defaultSchemaName) {
+        this.defaultSchemaName = defaultSchemaName;
     }
 }
