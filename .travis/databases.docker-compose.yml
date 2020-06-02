@@ -14,8 +14,8 @@ services:
     volumes:
       - "./mysql-init.sql:/docker-entrypoint-initdb.d/mysql-init.sql"
 
-  postgres-9:
-    image: postgres:9
+  postgres-12:
+    image: postgres:12
     ports:
       - "5432:5432"
     environment:

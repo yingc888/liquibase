@@ -10,9 +10,6 @@ env:
 services:
   - docker
 
-# before_install:
-#   - docker pull mysql:5
-
 install: cp ./.travis/maven.settings.xml $HOME/.m2/settings.xml
 before_script: docker-compose -f ./.travis/databases.docker-compose.yml up -d
 script:
