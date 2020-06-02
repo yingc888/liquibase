@@ -1,11 +1,13 @@
 package liquibase
 
 import ch.qos.logback.classic.Level
+import liquibase.command.core.SnapshotCommand
 import liquibase.database.Database
 import liquibase.database.core.PostgresDatabase
 import liquibase.util.StringUtils
 import liquibase.dbtest.DatabaseTestConnectionUtil
 import org.slf4j.LoggerFactory
+import spock.lang.Ignore
 import spock.lang.Specification
 import spock.lang.Unroll
 
@@ -19,7 +21,7 @@ class HelloTest extends Specification {
     rootLogger.setLevel(Level.INFO);
   }
 
-
+  @Ignore
   @Unroll
   def "test postgres"() {
     given:
@@ -30,11 +32,14 @@ class HelloTest extends Specification {
     String changelogPath = "changelogs/" + changelogDir + changelog
 
 
-    when:
-    List<String> generatedSql = generateSQL(changelogPath)
+    //String jsonSnapshotOriginal = getJsonSnapshot(database)
 
-    then:
-    expected_sql == generatedSql
+
+//    when:
+//    List<String> generatedSql = generateSQL(changelogPath)
+//
+//    then:
+//    expected_sql == generatedSql
 
     when:
     runChangeLogFile(changelogPath)
@@ -66,7 +71,11 @@ class HelloTest extends Specification {
   }
 
   String getJsonSnapshot(Database database) {
-    null
+    SnapshotCommand snapshotCommand = new SnapshotCommand()
+    snapshotCommand.setDatabase(database)
+    snapshotCommand.setSerializerFormat("json")
+    SnapshotCommand.SnapshotCommandResult result = snapshotCommand.execute()
+    return result.print()
   }
 
   void snapshotMatchesSpecifiedStructure(String s1, String s2) {
