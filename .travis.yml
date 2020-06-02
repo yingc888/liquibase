@@ -36,7 +36,7 @@ jobs:
       # name: "MariaDB 10 Integration Tests"
       # env: DB=mariadb19
       
-script: mvn integration-test $DB
+script: echo $DB && mvn integration-test
 # and have the travis.py script call a specific docker compose script. having just one isn't gonna cut it for us anymore.
 # script: travis.py $DB
 
