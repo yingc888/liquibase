@@ -40,7 +40,7 @@ class HelloTest extends Specification {
 
 
   //@Ignore
-  @Unroll
+  @Unroll("#featureName: #description")
   def "test generate sql and verify object creation"() {
     given:
     Database database = DatabaseFactory.getInstance().getDatabase(dbms)
