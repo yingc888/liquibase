@@ -128,8 +128,10 @@ public class DatabaseTestContext {
             }
         }
 
+        logger.info("Making connection to " + url);
         DatabaseConnection connection = openDatabaseConnection(url, username,password);
         if (connection == null) {
+            logger.info("No connection made");
             return null;
         }
 
@@ -199,6 +201,7 @@ public class DatabaseTestContext {
     public DatabaseConnection openDatabaseConnection(String url,
         String username, String password) throws Exception {
 
+        logger.info("Opening database connection to " + url);
         JUnitJDBCDriverClassLoader jdbcDriverLoader = JUnitJDBCDriverClassLoader.getInstance();
         final Driver driver;
         try {
