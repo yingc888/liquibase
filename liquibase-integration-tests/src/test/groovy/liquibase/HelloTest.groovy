@@ -56,7 +56,7 @@ class HelloTest extends Specification {
 
   //@Ignore
   @Unroll
-  def "test postgres"() {
+  def "test generate sql and verify object creation"() {
     given:
     Database database = DatabaseTestConnectionUtil.initializeDatabase(new PostgresDatabase())
     // Do not count the test as successful if we skip it because of a failed login. Count it as skipped instead.
