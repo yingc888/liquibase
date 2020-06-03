@@ -57,7 +57,7 @@ class HelloTest extends Specification {
     List<ChangeSet> changeSets = changeLog.getChangeSets()
 
     if (expected_sql) {
-      ArrayList<String> expectedSqlList = collectExpectedSqlList(expected_sql, dbms)
+      ArrayList<String> expectedSqlList = collectValuesForDb(expected_sql, dbms)
       when:
       List<String> generatedSql = TestUtils.toSqlFromChangeSets(changeSets, database)
       then:
@@ -66,7 +66,8 @@ class HelloTest extends Specification {
 
     if (!StringUtils.isEmpty(expected_snapshot)) {
       when:
-      List<CatalogAndSchema> catalogAndSchemaList = getCatalogAndSchema(snapshot_schema, database)
+      ArrayList<String> snapshotSchemas = collectValuesForDb(snapshot_schema, dbms, ",")
+      List<CatalogAndSchema> catalogAndSchemaList = getCatalogAndSchema(snapshotSchemas, database)
       catalogAndSchemaList.each { database.dropDatabaseObjects(it) }
       runUpdate(liquibase, contexts)
       String jsonSnapshot = getJsonSnapshot(database, catalogAndSchemaList)
@@ -88,28 +89,46 @@ class HelloTest extends Specification {
 
   }
 
-  private ArrayList<String> collectExpectedSqlList(Object expected_sql, String dbms) {
-    List<String> expectedSqlList = new ArrayList<>()
-    if (!expected_sql) {
-      return expectedSqlList
+  private ArrayList<String> collectValuesForDb(Object value, String dbms, String splitWith = null) {
+    List<String> returnList = new ArrayList<>()
+    if (!value) {
+      return returnList
     }
-    if (expected_sql instanceof Map) {
-      def expectedSqlForDb = expected_sql.get(dbms)
-      if (expectedSqlForDb) {
-        if (expectedSqlForDb instanceof Collection) {
-          expectedSqlList.addAll(expectedSqlForDb)
-        } else {
-          expectedSqlList.add(expectedSqlForDb.toString())
-        }
+    if (value instanceof Map) {
+      def valueForDB = value.get(dbms)
+      if (valueForDB) {
+        returnList.addAll(splitAndTrimIfNeeded(valueForDB, splitWith))
       }
-    } else if (expected_sql instanceof Collection) {
-      expectedSqlList.addAll(expected_sql)
     } else {
-      expectedSqlList.add(expected_sql.toString())
+      returnList.addAll(splitAndTrimIfNeeded(valueForDB, splitWith))
     }
-    return expectedSqlList
+    return returnList
   }
 
+  private List<String> splitAndTrimIfNeeded(String str, String regex = null) {
+    List<String> returnList = new ArrayList<>()
+    if (str) {
+      if (regex == null) {
+        returnList.add(str)
+        return returnList
+      }
+      return str?.split(regex)*.trim()
+    }
+    return new ArrayList<String>()
+  }
+
+  private Collection<String> splitAndTrimIfNeeded(Collection<String> strs, String regex = null) {
+    if (regex == null) {
+      return strs
+    }
+    List<String> returnList = new ArrayList<>()
+    strs.each { str ->
+      if (str) {
+        returnList.add(str.split(regex)*.trim())
+      }
+    }
+    return returnList
+  }
 
   void runUpdate(Liquibase liquibase, String contexts) {
     try {
@@ -131,9 +150,9 @@ class HelloTest extends Specification {
     return result.print()
   }
 
-  private ArrayList<CatalogAndSchema> getCatalogAndSchema(String schemaList, Database database) {
+  private ArrayList<CatalogAndSchema> getCatalogAndSchema(List<String> schemaList, Database database) {
     List<CatalogAndSchema> finalList = new ArrayList<>()
-    schemaList?.split(",")?.each { sch ->
+    schemaList?.each { sch ->
       String[] catSchema = sch.split("\\.")
       String catalog, schema
       if (catSchema.length == 2) {
@@ -147,6 +166,7 @@ class HelloTest extends Specification {
       }
       finalList.add(new CatalogAndSchema(catalog, schema).customize(database))
     }
+
     return finalList
   }
 

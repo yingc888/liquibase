@@ -29,7 +29,9 @@ TABLE:
     #          )
     #      ;
 
-    snapshot_schema: public
+    snapshot_schema:
+      postgresql: public
+      mysql: lbcat
     expected_snapshot: |
       {
         "snapshot": {
