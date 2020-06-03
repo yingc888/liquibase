@@ -156,6 +156,7 @@ public abstract class AbstractIntegrationTest {
     }
 
     private void openConnection(String url, String username, String password) throws Exception {
+        logger.info("Connection with: " + url + " :: " + username + " ::  " + password);
         DatabaseConnection connection = DatabaseTestContext.getInstance().getConnection(url, username, password);
 
         if (connection != null) {
