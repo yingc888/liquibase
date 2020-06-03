@@ -135,7 +135,7 @@ public abstract class AbstractIntegrationTest {
             if (localProperties != null)
                 integrationTestProperties.load(localProperties);
 
-            String url = integrationTestProperties.getProperty("integration.test." + databaseManager + ".jdbcurl");
+            String url = integrationTestProperties.getProperty("integration.test." + databaseManager + ".jdbcUrl");
             if (url == null) {
                 url = integrationTestProperties.getProperty("integration.test." + databaseManager + ".url");
             }
