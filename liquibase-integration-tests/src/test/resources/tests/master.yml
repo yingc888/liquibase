@@ -58,8 +58,9 @@ TABLE:
         </changeSet>
     #changelog: changelogs/test/example-changelog.xml
 
-    expected_sql: |
-      CREATE SEQUENCE public.willie START 420
+    expected_sql:
+      postgresql:
+        CREATE SEQUENCE  IF NOT EXISTS public.willie START WITH 420
 
     snapshot_schema: public
     expected_snapshot: |
