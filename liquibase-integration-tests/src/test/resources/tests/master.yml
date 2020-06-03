@@ -2,6 +2,7 @@ TABLE:
   - ####################################################################################################
     # Short description, it will be used as file name for changelog.
     description: "Simple create table"
+    database: postgresql, mysql
     changeset: |
       <changeSet id="1" author="shekhar">
        <createTable tableName="COUNTRIES">

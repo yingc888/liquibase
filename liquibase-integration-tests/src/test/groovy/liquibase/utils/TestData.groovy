@@ -1,33 +1,84 @@
 package liquibase.utils
 
-
+import liquibase.util.StringUtils
 import org.yaml.snakeyaml.Yaml
 
 class TestData {
 
-  private Map<String, List> dataMap
+  /**
+   *
+   * Map of {database : list of tests}
+   * database : name of the database the test is defined for (or empty string if not defined)
+   * test: map of key value pairs: descriptions, database, expected_sql etc
+   * Note: we add the test_section to each test (the main key in the yaml)
+   */
+  private Map<String, List<Map<String, Object>>> contents = new HashMap<>()
+
 
   TestData(String filename) {
     Yaml yaml = new Yaml()
-    this.dataMap = (Map<String, List>) yaml.load(FileUtils.getResourceFileContent(filename))
-  }
-
-
-  ExampleList examples() {
-    List<Map> examplesList = new ArrayList<>()
-    for (String key : this.dataMap.keySet()) {
-      examplesList.addAll(this.dataMap.get(key))
+    // this map is not the same as the "contents" map
+    Map<String, List<Map<String, Object>>> loadedContents = (Map<String, List>) yaml.load(FileUtils.getResourceFileContent(filename))
+    loadedContents.each { section, tests ->
+      tests.each { test ->
+        test.put("test_section", section);
+        String databases = test.get("database")
+        if (StringUtils.isEmpty(databases)) {
+          List<Map<String, Object>> contentTests = contents.get("")
+          addToListInMap(contents,"", test)
+        } else {
+          databases?.split(",")*.trim().each { database ->
+            test.put("test_valid_for_dbs", databases)
+            addToListInMap(contents, database.toLowerCase(), test)
+          }
+        }
+      }
     }
-    return new ExampleList(examplesList)
   }
 
-  ExampleList examples(String... keys) {
-    List<Map> examplesList = new ArrayList<>()
-    for (String key : keys) {
-      examplesList.addAll(this.dataMap.get(key))
+  private void addToListInMap(Map<String, ?> map, String key, Object value) {
+    List existingList = map.get(key)
+    if (existingList == null) {
+      existingList = new ArrayList()
+      map.put(key, existingList)
     }
-    new ExampleList(examplesList)
+    existingList.add(value)
   }
+
+  ExampleList forAllDatabases(String... keys) {
+    return forDatabases(null, keys)
+  }
+
+  ExampleList forDatabases(List<String> databases = null, String... keys = null) {
+    List<Map> testsForAskedDatabases = []
+    contents.each { db, val ->
+      if (shouldReturnForDb(db, databases)) {
+        val.each { test  ->
+          if (keys == null
+              || keys.length == 0
+              || keys*.toLowerCase().contains(test.get("test_section").toString().toLowerCase())) {
+            Map testClone = test.clone()
+            testClone.put("database", db)
+            testsForAskedDatabases.add(testClone)
+          }
+        }
+      }
+    }
+    return new ExampleList(testsForAskedDatabases)
+  }
+
+  /**
+   * Returns true if:
+   *  databases (running tests for) is null/empty or contains the db
+   *  db (the test is marked for): is null or empty or the databases we are running for contains it
+   * @param db Database value from the test (the test is marked for)
+   * @param databases databases that we are running tests for
+   * @return
+   */
+  boolean shouldReturnForDb(String db, List<String> databases) {
+    return db == null || db.size() == 0 || databases == null || databases.isEmpty() || databases*.toLowerCase().contains(db)
+  }
+
 
   String toYaml() {
     Yaml yaml = new Yaml()

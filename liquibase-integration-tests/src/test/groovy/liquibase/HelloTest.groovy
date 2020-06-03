@@ -5,7 +5,7 @@ import liquibase.changelog.ChangeSet
 import liquibase.changelog.DatabaseChangeLog
 import liquibase.command.core.SnapshotCommand
 import liquibase.database.Database
-import liquibase.database.core.PostgresDatabase
+import liquibase.database.DatabaseFactory
 import liquibase.dbtest.DatabaseTestConnectionUtil
 import liquibase.exception.ValidationFailedException
 import liquibase.util.StringUtils
@@ -33,32 +33,13 @@ class HelloTest extends Specification {
     rootLogger.setLevel(Level.INFO)
   }
 
-/*  public void setup() {
-    // Get the integration test properties for both global settings and (if applicable) local overrides.
-    Properties integrationTestProperties
-    integrationTestProperties = new Properties()
-    integrationTestProperties.load(Thread.currentThread().getContextClassLoader().getResourceAsStream("liquibase/liquibase.integrationtest.properties"))
-    InputStream localProperties = Thread.currentThread().getContextClassLoader().getResourceAsStream("liquibase/liquibase.integrationtest.local.properties")
-    if (localProperties != null)
-      integrationTestProperties.load(localProperties)
-
-    // Login username
-    username = integrationTestProperties.getProperty("integration.test." + dbms.getShortName() + ".username")
-    if (username == null)
-      username = integrationTestProperties.getProperty("integration.test.username")
-
-
-    // Login password
-    password = integrationTestProperties.getProperty("integration.test." + dbms.getShortName() + ".password")
-    if (password == null)
-      password = integrationTestProperties.getProperty("integration.test.password")
-  }*/
 
   //@Ignore
   @Unroll
   def "test generate sql and verify object creation"() {
     given:
-    Database database = DatabaseTestConnectionUtil.initializeDatabase(new PostgresDatabase())
+    Database database = DatabaseFactory.getInstance().getDatabase(dbms)
+    database = DatabaseTestConnectionUtil.initializeDatabase(database)
     // Do not count the test as successful if we skip it because of a failed login. Count it as skipped instead.
     org.junit.Assume.assumeTrue(database != null)
     File tempChangelogFile = createChangeLogTempFile(description, changeset)
@@ -90,10 +71,12 @@ class HelloTest extends Specification {
     }
 
     where:
-    [description, changeset, expected_sql, expected_snapshot, snapshot_schema] <<
+    [description, dbms, changeset, expected_sql, expected_snapshot, snapshot_schema] <<
         new TestData("tests/master.yml")
-            .examples()
-            .properties("description", "changeset", "expected_sql", "expected_snapshot", "snapshot_schema")
+            .forDatabases(["postgresql"/*, "mysql"*/], "TABLE")
+            //.forAllDatabases("TABLE")
+            //.forAllDatabases()
+            .properties("description", "database", "changeset", "expected_sql", "expected_snapshot", "snapshot_schema")
             .iterator()
 
   }
@@ -121,8 +104,19 @@ class HelloTest extends Specification {
 
   private ArrayList<CatalogAndSchema> getCatalogAndSchema(String schemaList, Database database) {
     List<CatalogAndSchema> finalList = new ArrayList<>()
-    schemaList.split("\\s*,\\s*").each { schema ->
-      finalList.add(new CatalogAndSchema(null, schema).customize(database))
+    schemaList.split(",")?.each { sch ->
+      String[] catSchema = sch.split("\\.")
+      String catalog, schema
+      if (catSchema.length == 2) {
+        catalog = catSchema[0]?.trim()
+        schema = catSchema[1]?.trim()
+      } else if (catSchema.length == 1) {
+        catalog = null
+        schema = catSchema[0]?.trim()
+      } else {
+        return finalList
+      }
+      finalList.add(new CatalogAndSchema(catalog, schema).customize(database))
     }
     return finalList
   }
