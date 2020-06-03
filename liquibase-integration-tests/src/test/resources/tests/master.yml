@@ -16,8 +16,11 @@ TABLE:
 
     #changelog: changelogs/test/example-changelog.xml
 
-    expected_sql: |
-      CREATE TABLE public.COUNTRIES (COUNTRY_ID CHAR(2) NOT NULL, COUNTRY_NAME VARCHAR(40), REGION_ID numeric)
+    expected_sql:
+      postgresql:
+        - CREATE TABLE public.COUNTRIES (COUNTRY_ID CHAR(2) NOT NULL, COUNTRY_NAME VARCHAR(40), REGION_ID numeric)
+      mysql:
+        - CREATE TABLE COUNTRIES (COUNTRY_ID CHAR(2) NOT NULL, COUNTRY_NAME VARCHAR(40), REGION_ID numeric)
     #      CREATE TABLE COUNTRIES
     #          (
     #           COUNTRY_ID CHAR (2 BYTE)  NOT NULL ,
@@ -34,7 +37,7 @@ TABLE:
             "liquibase.structure.core.Table": [
               {
                 "table": {
-                  "name": "countries"
+                  "name": "COUNTRIES"
                 }
               }]
           }
