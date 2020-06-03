@@ -9,6 +9,7 @@ import liquibase.database.jvm.JdbcConnection;
 import liquibase.exception.DatabaseException;
 import liquibase.logging.LogService;
 import liquibase.logging.LogType;
+import liquibase.logging.Logger;
 import liquibase.resource.ResourceAccessor;
 import liquibase.sdk.database.MockDatabase;
 
@@ -18,6 +19,7 @@ import java.sql.SQLException;
 import java.util.*;
 
 public class DatabaseTestContext {
+    Logger logger = LogService.getLog(getClass());
     public static final String ALT_CATALOG = "LIQUIBASEC";
     public static final String ALT_SCHEMA = "LIQUIBASEB";
     public static final String ALT_TABLESPACE = "LIQUIBASE2";
@@ -203,6 +205,7 @@ public class DatabaseTestContext {
             driver = (Driver) Class.forName(DatabaseFactory.getInstance().findDefaultDriver(url), true, jdbcDriverLoader).getConstructor().newInstance();
         } catch (Exception e) {
             System.out.println("Could not connect to " + url + ": Will not test against.  " + e.getMessage());
+            logger.severe("Could not find driver for " + url, e);
             return null; //could not connect
         }
 
