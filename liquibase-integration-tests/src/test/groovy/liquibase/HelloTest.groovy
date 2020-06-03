@@ -18,11 +18,16 @@ import org.skyscreamer.jsonassert.JSONCompareMode
 import org.skyscreamer.jsonassert.JSONCompareResult
 import org.skyscreamer.jsonassert.comparator.DefaultComparator
 import org.skyscreamer.jsonassert.comparator.JSONCompareUtil
+import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import spock.lang.Specification
 import spock.lang.Unroll
 
+import static org.hamcrest.Matchers.containsInAnyOrder
+import static org.junit.Assert.assertThat;
+
 class HelloTest extends Specification {
+  Logger logger = LoggerFactory.getLogger(HelloTest.class)
 
   private String username
   private String password
@@ -41,6 +46,7 @@ class HelloTest extends Specification {
     Database database = DatabaseFactory.getInstance().getDatabase(dbms)
     database = DatabaseTestConnectionUtil.initializeDatabase(database)
     // Do not count the test as successful if we skip it because of a failed login. Count it as skipped instead.
+    logger.info("Trying to run against database: {}", { database?.shortName })
     org.junit.Assume.assumeTrue(database != null)
     File tempChangelogFile = createChangeLogTempFile(description, changeset)
     String contexts = "test, context-b"
@@ -50,20 +56,21 @@ class HelloTest extends Specification {
     DatabaseChangeLog changeLog = liquibase.getDatabaseChangeLog()
     List<ChangeSet> changeSets = changeLog.getChangeSets()
 
-    if (!StringUtils.isEmpty(expected_sql)) {
+    if (expected_sql) {
+      ArrayList<String> expectedSqlList = collectExpectedSqlList(expected_sql, dbms)
       when:
       List<String> generatedSql = TestUtils.toSqlFromChangeSets(changeSets, database)
       then:
-      expected_sql == generatedSql
+      assertThat(expectedSqlList, containsInAnyOrder(generatedSql.toArray()))
     }
 
     if (!StringUtils.isEmpty(expected_snapshot)) {
       when:
       List<CatalogAndSchema> catalogAndSchemaList = getCatalogAndSchema(snapshot_schema, database)
-      catalogAndSchemaList.each {database.dropDatabaseObjects(it)}
+      catalogAndSchemaList.each { database.dropDatabaseObjects(it) }
       runUpdate(liquibase, contexts)
       String jsonSnapshot = getJsonSnapshot(database, catalogAndSchemaList)
-      println jsonSnapshot
+      logger.info(jsonSnapshot)
       //catalogAndSchemaList.each {database.dropDatabaseObjects(it)}
 
       then:
@@ -74,11 +81,33 @@ class HelloTest extends Specification {
     [description, dbms, changeset, expected_sql, expected_snapshot, snapshot_schema] <<
         new TestData("tests/master.yml")
             .forDatabases(["postgresql"/*, "mysql"*/], "TABLE")
-            //.forAllDatabases("TABLE")
-            //.forAllDatabases()
+        //.forAllDatabases("TABLE")
+        //.forAllDatabases()
             .properties("description", "database", "changeset", "expected_sql", "expected_snapshot", "snapshot_schema")
             .iterator()
 
+  }
+
+  private ArrayList<String> collectExpectedSqlList(Object expected_sql, String dbms) {
+    List<String> expectedSqlList = new ArrayList<>()
+    if (!expected_sql) {
+      return expectedSqlList
+    }
+    if (expected_sql instanceof Map) {
+      def expectedSqlForDb = expected_sql.get(dbms)
+      if (expectedSqlForDb) {
+        if (expectedSqlForDb instanceof Collection) {
+          expectedSqlList.addAll(expectedSqlForDb)
+        } else {
+          expectedSqlList.add(expectedSqlForDb.toString())
+        }
+      }
+    } else if (expected_sql instanceof Collection) {
+      expectedSqlList.addAll(expected_sql)
+    } else {
+      expectedSqlList.add(expected_sql.toString())
+    }
+    return expectedSqlList
   }
 
 
@@ -104,7 +133,7 @@ class HelloTest extends Specification {
 
   private ArrayList<CatalogAndSchema> getCatalogAndSchema(String schemaList, Database database) {
     List<CatalogAndSchema> finalList = new ArrayList<>()
-    schemaList.split(",")?.each { sch ->
+    schemaList?.split(",")?.each { sch ->
       String[] catSchema = sch.split("\\.")
       String catalog, schema
       if (catSchema.length == 2) {
@@ -136,6 +165,17 @@ class HelloTest extends Specification {
             this.recursivelyCompareJSONArray(prefix, exp, act, result)
           }
 
+        }
+      }
+
+      @Override
+      void compareValues(String prefix, Object expectedValue, Object actualValue, JSONCompareResult result) throws JSONException {
+        if (expectedValue instanceof String && actualValue instanceof String) {
+          if (!StringUtils.equalsIgnoreCaseAndEmpty(expectedValue, actualValue)) {
+            result.fail(prefix, expectedValue, actualValue);
+          }
+        } else {
+          super.compareValues(prefix, expectedValue, actualValue, result)
         }
       }
     })
