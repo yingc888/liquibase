@@ -28,12 +28,12 @@ jobs:
     - name: "Postgres Integration Tests"
       env: DB=postgres
       script: docker-compose -f ./.travis/databases.docker-compose.$DB.yml up -d && mvn integration-test
-    # - name: "MySQL Integration Tests"
-    #   env: DB=mysql
-    #   script: docker-compose -f ./.travis/databases.docker-compose.$DB.yml up -d && mvn integration-test
-    # - name: "MariaDB Integration Tests"
-    #   env: DB=mariadb
-    #   script: docker-compose -f ./.travis/databases.docker-compose.$DB.yml up -d && mvn integration-test
+    - name: "MySQL Integration Tests"
+      env: DB=mysql
+      script: docker-compose -f ./.travis/databases.docker-compose.$DB.yml up -d && mvn integration-test
+    - name: "MariaDB Integration Tests"
+      env: DB=mariadb
+      script: docker-compose -f ./.travis/databases.docker-compose.$DB.yml up -d && mvn integration-test
     # - name: "Oracle Integration Tests"
     #   env: DB=oracle
     #   script: docker-compose -f ./.travis/databases.docker-compose.$DB.yml up -d && mvn integration-test
