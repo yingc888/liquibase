@@ -100,7 +100,7 @@ class HelloTest extends Specification {
         returnList.addAll(splitAndTrimIfNeeded(valueForDB, splitWith))
       }
     } else {
-      returnList.addAll(splitAndTrimIfNeeded(valueForDB, splitWith))
+      returnList.addAll(splitAndTrimIfNeeded(value, splitWith))
     }
     return returnList
   }
