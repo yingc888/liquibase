@@ -222,9 +222,11 @@ public class DatabaseTestContext {
             connection = driver.connect(url, info);
         } catch (SQLException e) {
             System.out.println("Could not connect to " + url + ": Will not test against.  " + e.getMessage());
+            logger.severe("Could not connect to " + url, e);
             return null; //could not connect
         }
         if (connection == null) {
+            logger.severe("No connection made to " + url);
             throw new DatabaseException("Connection could not be created to " + url + " with driver " + driver.getClass().getName() + ".  Possibly the wrong driver for the given database URL");
         }
 
