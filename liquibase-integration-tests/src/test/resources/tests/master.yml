@@ -43,3 +43,33 @@ TABLE:
           }
         }
       }
+
+  - ####################################################################################################
+    # This is another test for a sequence
+    description: "Simple create sequence"
+    database: postgresql, mysql
+    changeset: |
+      <changeSet id="1" author="r2">
+        <createSequence  
+            sequenceName="willie"  
+            startValue="420"/>  
+        </changeSet>
+    #changelog: changelogs/test/example-changelog.xml
+
+    expected_sql: |
+      CREATE SEQUENCE public.willie START 420
+
+    snapshot_schema: public
+    expected_snapshot: |
+      {
+        "snapshot": {
+          "objects": {
+            "liquibase.structure.core.Sequence": [
+              {
+                "sequence": {
+                  "name": "willie"
+                }
+              }]
+          }
+        }
+      }
