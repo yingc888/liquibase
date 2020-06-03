@@ -20,7 +20,7 @@ TABLE:
       postgresql:
         - CREATE TABLE public.COUNTRIES (COUNTRY_ID CHAR(2) NOT NULL, COUNTRY_NAME VARCHAR(40), REGION_ID numeric)
       mysql:
-        - CREATE TABLE COUNTRIES (COUNTRY_ID CHAR(2) NOT NULL, COUNTRY_NAME VARCHAR(40), REGION_ID numeric)
+        - CREATE TABLE lbcat.COUNTRIES (COUNTRY_ID CHAR(2) NOT NULL, COUNTRY_NAME VARCHAR(40) NULL, REGION_ID numeric NULL)
     #      CREATE TABLE COUNTRIES
     #          (
     #           COUNTRY_ID CHAR (2 BYTE)  NOT NULL ,
@@ -40,6 +40,36 @@ TABLE:
               {
                 "table": {
                   "name": "COUNTRIES"
+                }
+              }]
+          }
+        }
+      }
+
+  - ####################################################################################################
+    # This is another test for a sequence
+    description: "Simple create sequence"
+    database: postgresql, mysql
+    changeset: |
+      <changeSet id="1" author="r2">
+        <createSequence  
+            sequenceName="willie"  
+            startValue="420"/>  
+        </changeSet>
+    #changelog: changelogs/test/example-changelog.xml
+
+    expected_sql: |
+      CREATE SEQUENCE public.willie START 420
+
+    snapshot_schema: public
+    expected_snapshot: |
+      {
+        "snapshot": {
+          "objects": {
+            "liquibase.structure.core.Sequence": [
+              {
+                "sequence": {
+                  "name": "willie"
                 }
               }]
           }
