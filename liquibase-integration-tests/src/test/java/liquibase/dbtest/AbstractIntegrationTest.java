@@ -181,7 +181,7 @@ public abstract class AbstractIntegrationTest {
         openConnection(getJdbcUrl(), getUsername(), getPassword());
 
         // Do not count the test as successful if we skip it because of a failed login. Count it as skipped instead.
-        //org.junit.Assume.assumeTrue(database != null);
+        org.junit.Assume.assumeTrue(database != null);
 
         if (database != null) {
             if (database.supportsTablespaces()) {
