@@ -142,12 +142,26 @@ public abstract class AbstractIntegrationTest {
             if (url == null) {
                 return null;
             }
+            // Login username
+            String username = integrationTestProperties.getProperty("integration.test." + databaseManager + ".username");
+            if(username==null)
+                username=integrationTestProperties.getProperty("integration.test.username");
+
+            // Login password
+            String password = integrationTestProperties.getProperty("integration.test." + databaseManager + ".password");
+            if(password==null)
+                password=integrationTestProperties.getProperty("integration.test.password");
+
+            // default schema name
+            String defaultSchemaName = integrationTestProperties.getProperty("integration.test." + databaseManager + ".defaultSchemaName");
+            if(defaultSchemaName==null)
+                defaultSchemaName=integrationTestProperties.getProperty("integration.test.defaultSchemaName");
 
             DatabaseTestURL testUrl = new DatabaseTestURL(databaseManager, url,
                 // These may be set to null if not defined as properties.
-                integrationTestProperties.getProperty("integration.test." + databaseManager + ".username"),
-                integrationTestProperties.getProperty("integration.test." + databaseManager + ".password"),
-                integrationTestProperties.getProperty("integration.test." + databaseManager + ".defaultSchemaName")
+                username,
+                password,
+                defaultSchemaName
             );
             return testUrl;
         } catch (IOException e) {
