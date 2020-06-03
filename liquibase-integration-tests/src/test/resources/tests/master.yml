@@ -1,0 +1,41 @@
+TABLE:
+  - ####################################################################################################
+    # Short description, it will be used as file name for changelog.
+    description: "Simple create table"
+    changeset: |
+      <changeSet id="1" author="shekhar">
+       <createTable tableName="COUNTRIES">
+         <column name="COUNTRY_ID" type="CHAR (2 BYTE)">
+             <constraints nullable="false"/>
+         </column>
+         <column name="COUNTRY_NAME" type="VARCHAR2 (40 BYTE)"/>
+         <column name="REGION_ID" type="NUMBER"/>
+       </createTable>
+      </changeSet>
+
+    #changelog: changelogs/test/example-changelog.xml
+
+    expected_sql: |
+      CREATE TABLE public.COUNTRIES (COUNTRY_ID CHAR(2) NOT NULL, COUNTRY_NAME VARCHAR(40), REGION_ID numeric)
+    #      CREATE TABLE COUNTRIES
+    #          (
+    #           COUNTRY_ID CHAR (2 BYTE)  NOT NULL ,
+    #           COUNTRY_NAME VARCHAR2 (40 BYTE) ,
+    #           REGION_ID NUMBER
+    #          )
+    #      ;
+
+    snapshot_schema: public
+    expected_snapshot: |
+      {
+        "snapshot": {
+          "objects": {
+            "liquibase.structure.core.Table": [
+              {
+                "table": {
+                  "name": "countries"
+                }
+              }]
+          }
+        }
+      }

@@ -1,17 +1,27 @@
 package liquibase.dbtest;
 
+import liquibase.CatalogAndSchema;
 import liquibase.changelog.ChangeLogHistoryServiceFactory;
 import liquibase.database.Database;
 import liquibase.database.DatabaseConnection;
 import liquibase.database.DatabaseFactory;
+import liquibase.database.core.PostgresDatabase;
+import liquibase.database.jvm.JdbcConnection;
 import liquibase.exception.DatabaseException;
 import liquibase.executor.ExecutorService;
+import liquibase.lockservice.LockService;
 import liquibase.lockservice.LockServiceFactory;
 import liquibase.logging.LogService;
+import liquibase.logging.LogType;
 import liquibase.logging.Logger;
 import liquibase.snapshot.SnapshotGeneratorFactory;
+import liquibase.structure.core.Schema;
+import liquibase.structure.core.Table;
 import liquibase.test.DatabaseTestContext;
 import liquibase.test.DatabaseTestURL;
+
+import java.sql.SQLException;
+import java.sql.Statement;
 
 public class DatabaseTestConnectionUtil {
     private static Logger logger = LogService.getLog(DatabaseTestConnectionUtil.class);
@@ -66,4 +76,5 @@ public class DatabaseTestConnectionUtil {
 
         ChangeLogHistoryServiceFactory.getInstance().resetAll();
     }
+
 }
