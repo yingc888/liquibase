@@ -229,7 +229,7 @@ public class DatabaseTestContext {
             logger.severe("No connection made to " + url);
             throw new DatabaseException("Connection could not be created to " + url + " with driver " + driver.getClass().getName() + ".  Possibly the wrong driver for the given database URL");
         }
-
+        logger.info("Connection made to " + url);
         return new JdbcConnection(connection);
     }
 
