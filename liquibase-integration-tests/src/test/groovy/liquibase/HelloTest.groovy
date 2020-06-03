@@ -69,6 +69,7 @@ class HelloTest extends Specification {
       ArrayList<String> snapshotSchemas = collectValuesForDb(snapshot_schema, dbms, ",")
       List<CatalogAndSchema> catalogAndSchemaList = getCatalogAndSchema(snapshotSchemas, database)
       catalogAndSchemaList.each { database.dropDatabaseObjects(it) }
+      DatabaseTestConnectionUtil.wipeDatabase(database);
       runUpdate(liquibase, contexts)
       String jsonSnapshot = getJsonSnapshot(database, catalogAndSchemaList)
       logger.info(jsonSnapshot)
