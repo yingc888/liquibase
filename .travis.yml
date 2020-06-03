@@ -15,10 +15,12 @@ env:
 services:
   - docker
 
-install:
-  - true
+before_install:
   - cp ./.travis/maven.settings.xml $HOME/.m2/settings.xml
   - docker login -u $DOCKER_AUTH_USR -p $DOCKER_AUTH_PWD docker-dev.artifactory.datical.net
+
+install:
+  - true
 
 jobs:
   include:
