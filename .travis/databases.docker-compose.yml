@@ -148,7 +148,7 @@ services:
 # aberrant databases we need to setup in our artifactory/docker.hub
 ###############################################################################
 
-# Oracle RDBMS running with SID=XE on localhost (XE=Oracle Express Edition)
+
 # integration.test.oracle.username=liquibase
 # integration.test.oracle.password=liquibase
 # integration.test.oracle.url=jdbc:oracle:thin:@//localhost/XE

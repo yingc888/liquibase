@@ -1,0 +1,15 @@
+version: '3.3'
+
+services:
+
+# Oracle RDBMS running with SID=XE on localhost (XE=Oracle Express Edition)
+  oracle-18.4-xe:
+    image: docker-dev.artifactory.datical.net/datical/oracle-xe:18.4.0
+    ports:
+      - "1521:1521"
+    environment:
+    restart: always
+    environment:
+      ORACLE_PWD: LbRootPass1
+    volumes:
+      - "./oracle-init.sql:/docker-entrypoint-initdb.d/startup/oracle-init.sql"
