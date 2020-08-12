@@ -148,6 +148,7 @@
                         <descriptor>src/main/assembly/assembly-jar.xml</descriptor>
                         <descriptor>src/main/assembly/assembly-bin.xml</descriptor>
                     </descriptors>
+                    <tarLongFileMode>posix</tarLongFileMode>
                     <archive>
                       <manifestFile>${project.basedir}/../liquibase-core/target/classes/META-INF/MANIFEST.MF</manifestFile>
                     </archive>

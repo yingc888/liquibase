@@ -14,7 +14,7 @@ import spock.lang.Specification
 import spock.lang.Unroll
 
 
-class MainTest extends Specification {
+class MainTestIT extends Specification {
 
     @Shared TestConfig config
 
