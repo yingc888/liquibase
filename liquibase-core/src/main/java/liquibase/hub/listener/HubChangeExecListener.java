@@ -80,12 +80,12 @@ public class HubChangeExecListener extends AbstractChangeExecListener
      * @param changeSet         changeSet that was rolled back
      * @param databaseChangeLog parent change log
      * @param database          the database the rollback was executed on.
-     * @param e                 original exception
+     * @param t                 original exception
      *
      */
     @Override
-    public void rollbackFailed(ChangeSet changeSet, DatabaseChangeLog databaseChangeLog, Database database, Exception e) {
-        updateHubForRollback(changeSet, databaseChangeLog, database, "FAIL", e.getMessage());
+    public void rollbackFailed(ChangeSet changeSet, DatabaseChangeLog databaseChangeLog, Database database, Throwable t) {
+        updateHubForRollback(changeSet, databaseChangeLog, database, "FAIL", t.getMessage());
     }
 
     /**
@@ -117,9 +117,19 @@ public class HubChangeExecListener extends AbstractChangeExecListener
 
     }
 
+    /**
+     *
+     * Called when a change set fails to update
+     *
+     * @param changeSet         changeSet that was rolled back
+     * @param databaseChangeLog parent change log
+     * @param database          the database the rollback was executed on.
+     * @param t                 original exception
+     *
+     */
     @Override
-    public void runFailed(ChangeSet changeSet, DatabaseChangeLog databaseChangeLog, Database database, Exception exception) {
-        updateHub(changeSet, databaseChangeLog, database, "FAIL", exception.getMessage());
+    public void runFailed(ChangeSet changeSet, DatabaseChangeLog databaseChangeLog, Database database, Throwable t) {
+        updateHub(changeSet, databaseChangeLog, database, "FAIL", t.getMessage());
     }
 
     //

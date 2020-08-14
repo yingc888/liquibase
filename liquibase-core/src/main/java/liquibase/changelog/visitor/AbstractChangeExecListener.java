@@ -51,7 +51,7 @@ public abstract class AbstractChangeExecListener implements ChangeExecListener {
      *
      */
     @Override
-    public void rollbackFailed(ChangeSet changeSet, DatabaseChangeLog databaseChangeLog, Database database, Exception e) {
+    public void rollbackFailed(ChangeSet changeSet, DatabaseChangeLog databaseChangeLog, Database database, Throwable t) {
     }
 
     @Override
@@ -81,6 +81,6 @@ public abstract class AbstractChangeExecListener implements ChangeExecListener {
     @Override
     public void runFailed(ChangeSet changeSet,
             DatabaseChangeLog databaseChangeLog, Database database,
-            Exception exception) {
+            Throwable t) {
     }
 }

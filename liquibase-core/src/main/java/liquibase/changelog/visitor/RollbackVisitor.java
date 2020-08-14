@@ -52,9 +52,9 @@ public class RollbackVisitor implements ChangeSetVisitor {
         try {
             changeSet.rollback(this.database, this.execListener);
         }
-        catch (Exception e) {
-            fireRollbackFailed(changeSet, databaseChangeLog, database, e);
-            throw e;
+        catch (Throwable t) {
+            fireRollbackFailed(changeSet, databaseChangeLog, database, t);
+            throw t;
         }
         this.database.removeRanStatus(changeSet);
         sendRollbackEvent(changeSet, databaseChangeLog, database);
@@ -62,9 +62,9 @@ public class RollbackVisitor implements ChangeSetVisitor {
         checkForEmptyRollbackFile(changeSet);
     }
 
-    protected void fireRollbackFailed(ChangeSet changeSet, DatabaseChangeLog databaseChangeLog, Database database, Exception e) {
+    protected void fireRollbackFailed(ChangeSet changeSet, DatabaseChangeLog databaseChangeLog, Database database, Throwable t) {
         if (execListener != null) {
-            execListener.rollbackFailed(changeSet, databaseChangeLog, database, e);
+            execListener.rollbackFailed(changeSet, databaseChangeLog, database, t);
         }
     }
 
