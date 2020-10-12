@@ -257,7 +257,7 @@ class LiquibaseTest extends Specification {
      * To use, create a subclass that overrides the method delegated to with an implementation that stores whatever params are being passed.
      * After calling the delegating method in your test, assert against the objectToVerify
      */
-    public static class LiquibaseDelegate extends Liquibase {
+    public class LiquibaseDelegate extends Liquibase {
 
         /**
          * If using multiple parameters, store them here
@@ -269,7 +269,7 @@ class LiquibaseTest extends Specification {
         protected Object objectToVerify
 
         public LiquibaseDelegate() throws LiquibaseException {
-            super("com/example/changelog.mock", new MockResourceAccessor(), mockDatabase)
+            super("com/example/changelog.mock", new MockResourceAccessor(), LiquibaseTest.this.mockDatabase)
         }
 
         /**

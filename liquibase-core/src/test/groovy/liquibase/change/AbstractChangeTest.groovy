@@ -339,7 +339,7 @@ class AbstractChangeTest extends Specification {
 
         @Override
         String getSerializedObjectNamespace() {
-            return STANDARD_CHANGELOG_NAMESPACE
+            return LiquibaseSerializable.STANDARD_CHANGELOG_NAMESPACE
         }
 
     }
