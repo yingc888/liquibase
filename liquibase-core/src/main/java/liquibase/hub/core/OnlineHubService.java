@@ -3,23 +3,72 @@ package liquibase.hub.core;
 import liquibase.Scope;
 import liquibase.changelog.ChangeSet;
 import liquibase.changelog.RanChangeSet;
+import liquibase.configuration.GlobalConfiguration;
 import liquibase.configuration.HubConfiguration;
 import liquibase.configuration.LiquibaseConfiguration;
 import liquibase.exception.LiquibaseException;
-import liquibase.hub.*;
-import liquibase.hub.model.*;
+import liquibase.hub.HubService;
+import liquibase.hub.HubServiceFactory;
+import liquibase.hub.LiquibaseHubException;
+import liquibase.hub.LiquibaseHubObjectNotFoundException;
+import liquibase.hub.LiquibaseHubSecurityException;
+import liquibase.hub.LiquibaseHubUserException;
+import liquibase.hub.model.Connection;
+import liquibase.hub.model.CreateStartRequestBody;
+import liquibase.hub.model.CreateStartResponseBody;
+import liquibase.hub.model.HubChange;
+import liquibase.hub.model.HubChangeLog;
+import liquibase.hub.model.HubModel;
+import liquibase.hub.model.HubUser;
+import liquibase.hub.model.ListResponse;
+import liquibase.hub.model.Operation;
+import liquibase.hub.model.OperationChange;
+import liquibase.hub.model.OperationChangeEvent;
+import liquibase.hub.model.OperationEvent;
+import liquibase.hub.model.Organization;
+import liquibase.hub.model.Project;
 import liquibase.integration.IntegrationDetails;
 import liquibase.logging.Logger;
+import liquibase.parser.core.xml.XMLChangeLogSAXParser;
 import liquibase.plugin.Plugin;
+import liquibase.resource.InputStreamList;
+import liquibase.resource.ResourceAccessor;
 import liquibase.util.ISODateFormat;
 import liquibase.util.LiquibaseUtil;
+import liquibase.util.StreamUtil;
 import liquibase.util.StringUtil;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.RandomAccessFile;
 import java.lang.reflect.Field;
 import java.net.ConnectException;
 import java.net.InetAddress;
+import java.net.URI;
 import java.text.ParseException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
+import java.util.SortedSet;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.TreeSet;
+import java.util.UUID;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class OnlineHubService implements HubService {
     private static final String DATE_TIME_FORMAT_STRING = "yyyy-MM-dd'T'HH:mm:ss.SSSZ";
@@ -53,49 +102,161 @@ public class OnlineHubService implements HubService {
         return true;
     }
 
+    private String waitForUserInput(int secondsToWait) {
+        Timer timer = new Timer();
+        long startTime = System.currentTimeMillis();
+        AtomicInteger timerSec = new AtomicInteger(secondsToWait + 1);
+        try (BufferedReader in = new BufferedReader(new InputStreamReader(System.in))) {
+            timer.schedule(new TimerTask() {
+                @Override
+                public void run() {
+                    System.out.println(timerSec.decrementAndGet());
+                }
+            }, 0, 1000);
+
+            while ((System.currentTimeMillis() - startTime) < secondsToWait * 1000 && !in.ready()) {
+            }
+            if (in.ready()) {
+                timer.cancel();
+                return in.readLine();
+            } else {
+                timer.cancel();
+                return "";
+            }
+        } catch (IOException ex) {
+            return "";
+        }
+    }
+
+    private void addChangelogIdToChangelog(String changeLogFile, String changeLogId) throws IOException {
+        final ResourceAccessor resourceAccessor = Scope.getCurrentScope().getResourceAccessor();
+        InputStreamList list = resourceAccessor.openStreams("", changeLogFile);
+        List<URI> uris = list.getURIs();
+        InputStream is = list.iterator().next();
+        String encoding = LiquibaseConfiguration.getInstance().getConfiguration(GlobalConfiguration.class).getOutputEncoding();
+        String changeLogString = StreamUtil.readStreamAsString(is, encoding);
+        String patternString = "(?ms).*<databaseChangeLog[^>]*>";
+        Pattern pattern = Pattern.compile(patternString);
+        Matcher matcher = pattern.matcher(changeLogString);
+        if (matcher.find()) {
+            String header = changeLogString.substring(matcher.start(), matcher.end() - 1);
+            String xsdPatternString = "([dbchangelog|liquibase-pro])-3.[0-9]?[0-9]?.xsd";
+            Pattern xsdPattern = Pattern.compile(xsdPatternString);
+            Matcher xsdMatcher = xsdPattern.matcher(header);
+            String editedString = xsdMatcher.replaceAll("$1-" + XMLChangeLogSAXParser.getSchemaVersion() + ".xsd");
+
+            String outputHeader = editedString + " changeLogId=\"" + changeLogId + "\">";
+            changeLogString = changeLogString.replaceFirst(patternString, outputHeader);
+        }
+        is.close();
+        File f = new File(uris.get(0).getPath());
+        RandomAccessFile randomAccessFile = new RandomAccessFile(f, "rw");
+        randomAccessFile.write(changeLogString.getBytes(encoding));
+        randomAccessFile.close();
+    }
+
+    private void addOrUpdateApiKeyAndHubMode(String apiKey, String hubMode) throws IOException {
+        final ResourceAccessor resourceAccessor = Scope.getCurrentScope().getResourceAccessor();
+        InputStreamList list = resourceAccessor.openStreams("", "liquibase.properties");
+        Properties prop = new Properties();
+        InputStream in = list.iterator().next();
+        prop.load(in);
+
+        if (!StringUtil.isEmpty(apiKey)) {
+            prop.setProperty("liquibase.hub.apiKey", apiKey);
+        }
+        if (!StringUtil.isEmpty(hubMode)) {
+            prop.setProperty("liquibase.hub.mode", hubMode);
+        }
+
+        prop.store(new FileOutputStream("liquibase.properties"), null);
+    }
+
     public boolean isHubAvailable() {
         if (this.available == null) {
             final Logger log = Scope.getCurrentScope().getLog(getClass());
             final HubServiceFactory hubServiceFactory = Scope.getCurrentScope().getSingleton(HubServiceFactory.class);
-
-            if (LiquibaseConfiguration.getInstance().getConfiguration(HubConfiguration.class).getLiquibaseHubMode().equalsIgnoreCase("OFF")) {
-                hubServiceFactory.setOfflineReason("property liquibase.hub.mode is 'OFF'. To send data to Liquibase Hub, please set it to \"all\"");
-                this.available = false;
-            } else if (getApiKey() == null) {
-                hubServiceFactory.setOfflineReason("liquibase.hub.apiKey was not specified");
-                this.available = false;
-            } else {
-                try {
-                    if (userId == null) {
-                        HubUser me = this.getMe();
-                        this.userId = me.getId();
+            if (LiquibaseConfiguration.getInstance().getConfiguration(HubConfiguration.class).getLiquibaseHubMode().equalsIgnoreCase("")) {
+                System.out.println("Do you want to see an operation report in Liquibase Hub ([Y]es, [N]o, [S]kip)?  10");
+                String userAnswer = waitForUserInput(10);
+                if ("y".equalsIgnoreCase(userAnswer)) {
+                    try {
+                        //TODO: mock/stub data
+                        String changeLogFile = "dbchangelog.xml";
+                        String jdbcUrl = "jdbc:mysql://localhost/hackathon_db";
+                        CreateStartResponseBody responseBody = this.start(new CreateStartRequestBody(jdbcUrl, changeLogFile));
+                        try {
+                            this.addOrUpdateApiKeyAndHubMode(responseBody.getApiKey(), "all");
+                            this.addChangelogIdToChangelog(changeLogFile, responseBody.getChangelogId().toString());
+                            LiquibaseConfiguration.getInstance().getConfiguration(HubConfiguration.class).setLiquibaseHubApiKey(responseBody.getApiKey());
+                            LiquibaseConfiguration.getInstance().getConfiguration(HubConfiguration.class).setLiquibaseHubMode("all");
+                        } catch (IOException e) {
+                            //TODO: change it
+                            e.printStackTrace();
+                        }
+                    } catch (LiquibaseHubException e) {
+                        if (e.getCause() instanceof ConnectException) {
+                            hubServiceFactory.setOfflineReason("Cannot connect to Liquibase Hub");
+                        } else {
+                            hubServiceFactory.setOfflineReason(e.getMessage());
+                        }
+                        log.info(e.getMessage(), e);
+                        this.available = false;
                     }
-                    if (organizationId == null) {
-                        Organization organization = this.getOrganization();
-                        this.organizationId = organization.getId();
-                    }
-
                     log.info("Connected to Liquibase Hub with an API Key '" + LiquibaseConfiguration.getInstance().getConfiguration(HubConfiguration.class).getLiquibaseHubApiKeySecureDescription() + "'");
                     this.available = true;
-                } catch (LiquibaseHubException e) {
-                    if (e.getCause() instanceof ConnectException) {
-                        hubServiceFactory.setOfflineReason("Cannot connect to Liquibase Hub");
-                    } else {
-                        hubServiceFactory.setOfflineReason(e.getMessage());
+                } else if ("n".equalsIgnoreCase(userAnswer)) {
+                    try {
+                        this.addOrUpdateApiKeyAndHubMode(null, "off");
+                    } catch (IOException e) {
+                        //TODO: change it
+                        e.printStackTrace();
                     }
-                    log.info(e.getMessage(), e);
+                    LiquibaseConfiguration.getInstance().getConfiguration(HubConfiguration.class).setLiquibaseHubMode("off");
+                    hubServiceFactory.setOfflineReason("property liquibase.hub.mode is 'OFF'. This operation will not be tracked in Hub.  To enable this feature, run liquibase hubsetup.");
+                    this.available = false;
+                } else if (userAnswer == null || userAnswer.isEmpty() || "s".equalsIgnoreCase(userAnswer)) {
                     this.available = false;
                 }
-            }
-            String apiKey = getApiKey();
-            if (!this.available && apiKey != null) {
-              String message = "Hub communication failure: " + hubServiceFactory.getOfflineReason() + ".\n" +
-                      "The data for your operations will not be recorded in your Liquibase Hub project";
-              Scope.getCurrentScope().getUI().sendMessage(message);
-              log.info(message);
+            } else {
+                if (LiquibaseConfiguration.getInstance().getConfiguration(HubConfiguration.class).getLiquibaseHubMode().equalsIgnoreCase("OFF")) {
+                    hubServiceFactory.setOfflineReason("property liquibase.hub.mode is 'OFF'. This operation will not be tracked in Hub.  To enable this feature, run liquibase hubsetup.");
+                    this.available = false;
+                } else if (getApiKey() == null) {
+                    hubServiceFactory.setOfflineReason("liquibase.hub.apiKey was not specified");
+                    this.available = false;
+                } else {
+                    try {
+                        if (userId == null) {
+                            HubUser me = this.getMe();
+                            this.userId = me.getId();
+                        }
+                        if (organizationId == null) {
+                            Organization organization = this.getOrganization();
+                            this.organizationId = organization.getId();
+                        }
+
+                        log.info("Connected to Liquibase Hub with an API Key '" + LiquibaseConfiguration.getInstance().getConfiguration(HubConfiguration.class).getLiquibaseHubApiKeySecureDescription() + "'");
+                        this.available = true;
+                    } catch (LiquibaseHubException e) {
+                        if (e.getCause() instanceof ConnectException) {
+                            hubServiceFactory.setOfflineReason("Cannot connect to Liquibase Hub");
+                        } else {
+                            hubServiceFactory.setOfflineReason(e.getMessage());
+                        }
+                        log.info(e.getMessage(), e);
+                        this.available = false;
+                    }
+                }
+                String apiKey = getApiKey();
+                if (!this.available && apiKey != null) {
+                    String message = "Hub communication failure: " + hubServiceFactory.getOfflineReason() + ".\n" +
+                            "The data for your operations will not be recorded in your Liquibase Hub project";
+                    Scope.getCurrentScope().getUI().sendMessage(message);
+                    log.info(message);
+                }
             }
         }
-
         return this.available;
     }
 
@@ -467,6 +628,11 @@ public class OnlineHubService implements HubService {
                         "/operations/" + operationChange.getOperation().getId().toString() +
                         "/changes",
                 hubChangeList, ArrayList.class);
+    }
+
+    @Override
+    public CreateStartResponseBody start(CreateStartRequestBody createStartRequestBody) throws LiquibaseHubException {
+        return http.doPost("/api/dev/start", createStartRequestBody, CreateStartResponseBody.class);
     }
 
     /**

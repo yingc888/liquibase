@@ -245,6 +245,8 @@ public class Liquibase implements AutoCloseable {
                 // Make sure the Hub is available here by checking the return
                 // We do not need a connection if we are using a LoggingExecutor
                 //
+                final HubService hubService = Scope.getCurrentScope().getSingleton(HubServiceFactory.class).getService();
+
                 Executor executor = Scope.getCurrentScope().getSingleton(ExecutorService.class).getExecutor("jdbc", database);
                 if (! (executor instanceof LoggingExecutor)) {
                     Connection connection = getConnection(changeLog);

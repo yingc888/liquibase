@@ -29,7 +29,7 @@ public class HubConfiguration extends AbstractConfigurationContainer {
                 });
         getContainer().addProperty(LIQUIBASE_HUB_MODE, String.class)
                 .setDescription("Content to send to Liquibase Hub during operations. Values can be 'all', 'meta', or 'off'")
-                .setDefaultValue("all");
+                .setDefaultValue("");
     }
 
     @Override
@@ -66,6 +66,7 @@ public class HubConfiguration extends AbstractConfigurationContainer {
     public String getLiquibaseHubUrl() {
         String hubUrl = getContainer().getValue(LIQUIBASE_HUB_URL, String.class);
         if (hubUrl == null || hubUrl.isEmpty()) {
+            //TODO: change to local instance
             return "https://hub.liquibase.com";
         }
         return hubUrl;
@@ -80,9 +81,9 @@ public class HubConfiguration extends AbstractConfigurationContainer {
         final String value = getContainer().getValue(LIQUIBASE_HUB_MODE, String.class);
 
         final List<String> validValues = Arrays.asList("off", "meta", "all");
-        if (!validValues.contains(value.toLowerCase())) {
+        /*if (!validValues.contains(value.toLowerCase())) {
             throw new RuntimeException(" An invalid liquibase.hub.mode value of "+value+" detected. Acceptable values are "+StringUtil.join(validValues, ", "));
-        }
+        }*/
         return value;
     }
 }

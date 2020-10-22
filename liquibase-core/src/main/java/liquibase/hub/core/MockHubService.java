@@ -135,6 +135,11 @@ public class MockHubService implements HubService {
 
     }
 
+    @Override
+    public CreateStartResponseBody start(CreateStartRequestBody createStartRequestBody) {
+        return null;
+    }
+
     public void reset() {
         randomUUID = UUID.randomUUID();
 
