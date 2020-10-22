@@ -279,7 +279,7 @@ public class Liquibase implements AutoCloseable {
                 hubUpdater.postUpdateHub(updateOperation, bufferLog);
                 if (updateOperation != null) {
                     //TODO: mock
-                    System.out.println(String.format("View a report of this operation at https://hub.liquibase.com/organization/%s/projects/%s/operations/%s", UUID.randomUUID().toString(), UUID.randomUUID().toString(), UUID.randomUUID().toString());
+                    System.out.println(String.format("View a report of this operation at https://hub.liquibase.com/organization/%s/projects/%s/operations/%s", UUID.randomUUID().toString(), UUID.randomUUID().toString(), UUID.randomUUID().toString()));
                 }
             } catch (Throwable e) {
                 if (hubUpdater != null) {
