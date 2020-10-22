@@ -103,7 +103,7 @@ public class OnlineHubService implements HubService {
     }
 
     private String waitForUserInput(int secondsToWait) {
-        Timer timer = new Timer();
+        /*Timer timer = new Timer();
         long startTime = System.currentTimeMillis();
         AtomicInteger timerSec = new AtomicInteger(secondsToWait + 1);
         try (BufferedReader in = new BufferedReader(new InputStreamReader(System.in))) {
@@ -123,6 +123,11 @@ public class OnlineHubService implements HubService {
                 timer.cancel();
                 return "";
             }
+        } catch (IOException ex) {
+            return "";
+        }*/
+        try (BufferedReader in = new BufferedReader(new InputStreamReader(System.in))) {
+            return in.readLine();
         } catch (IOException ex) {
             return "";
         }
