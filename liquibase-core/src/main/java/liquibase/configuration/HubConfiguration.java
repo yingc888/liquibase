@@ -67,7 +67,7 @@ public class HubConfiguration extends AbstractConfigurationContainer {
         String hubUrl = getContainer().getValue(LIQUIBASE_HUB_URL, String.class);
         if (hubUrl == null || hubUrl.isEmpty()) {
             //TODO: change to local instance
-            return "https://hub.liquibase.com";
+            return "http://localhost:8888";
         }
         return hubUrl;
     }

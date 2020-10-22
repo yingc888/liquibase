@@ -236,8 +236,6 @@ public class Liquibase implements AutoCloseable {
 
                 changeLog.validate(database, contexts, labelExpression);
 
-                hubUpdater = new HubUpdater(new Date(), changeLog);
-
                 ChangeLogIterator changeLogIterator = getStandardChangelogIterator(contexts, labelExpression, changeLog);
 
                 //
@@ -246,8 +244,10 @@ public class Liquibase implements AutoCloseable {
                 // We do not need a connection if we are using a LoggingExecutor
                 //
                 final HubService hubService = Scope.getCurrentScope().getSingleton(HubServiceFactory.class).getService();
-
                 Executor executor = Scope.getCurrentScope().getSingleton(ExecutorService.class).getExecutor("jdbc", database);
+                databaseChangeLog = null;
+                changeLog = getDatabaseChangeLog();
+                hubUpdater = new HubUpdater(new Date(), changeLog);
                 if (! (executor instanceof LoggingExecutor)) {
                     Connection connection = getConnection(changeLog);
                     if (connection != null) {
@@ -277,6 +277,10 @@ public class Liquibase implements AutoCloseable {
                     runChangeLogIterator.run(createUpdateVisitor(), new RuntimeEnvironment(database, contexts, labelExpression));
                 });
                 hubUpdater.postUpdateHub(updateOperation, bufferLog);
+                if (updateOperation != null) {
+                    //TODO: mock
+                    System.out.println(String.format("View a report of this operation at https://hub.liquibase.com/organization/%s/projects/%s/operations/%s", UUID.randomUUID().toString(), UUID.randomUUID().toString(), UUID.randomUUID().toString());
+                }
             } catch (Throwable e) {
                 if (hubUpdater != null) {
                     hubUpdater.postUpdateHubExceptionHandling(updateOperation, bufferLog, e.getMessage());
