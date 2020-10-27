@@ -6,6 +6,16 @@ import liquibase.structure.DatabaseObject;
 import liquibase.util.StringUtil;
 
 public abstract class StoredDatabaseLogic<T extends StoredDatabaseLogic> extends AbstractDatabaseObject {
+
+    public StoredDatabaseLogic() {
+    }
+
+    public StoredDatabaseLogic(String catalogName, String schemaName, String name) {
+        setSchema(new Schema(catalogName, schemaName));
+        setName(name);
+    }
+
+
     @Override
     public DatabaseObject[] getContainingObjects() {
         return new DatabaseObject[]{
