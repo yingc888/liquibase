@@ -208,10 +208,10 @@ public class Main {
                     }
                     HubConfiguration hubConfiguration = LiquibaseConfiguration.getInstance().getConfiguration(HubConfiguration.class);
 
-                    if ((args.length == 0) || ((args.length == 1) && ("--" + OPTIONS.HELP).equals(args[0]))) {
+                    if ((args.length == 0) || ((args.length == 1) && ("--" + OPTIONS.HELP).equalsIgnoreCase(args[0]))) {
                         main.printHelp(System.out);
                         return 0;
-                    } else if (("--" + OPTIONS.VERSION).equals(args[0])) {
+                    } else if (("--" + OPTIONS.VERSION).equalsIgnoreCase(args[0])) {
                         main.command = "";
                         main.parseDefaultPropertyFiles();
                         Scope.getCurrentScope().getUI().sendMessage(CommandLineUtils.getBanner());
@@ -360,7 +360,7 @@ public class Main {
                     Scope.child(Scope.Attr.resourceAccessor, new ClassLoaderResourceAccessor(main.configureClassLoader()), () -> {
                         main.doMigration();
 
-                        if (COMMANDS.UPDATE.equals(main.command)) {
+                        if (COMMANDS.UPDATE.equalsIgnoreCase(main.command)) {
                             Scope.getCurrentScope().getUI().sendMessage(coreBundle.getString("update.successful"));
                         } else if (main.command.startsWith(COMMANDS.ROLLBACK)) {
                             Scope.getCurrentScope().getUI().sendMessage(coreBundle.getString("rollback.successful"));
@@ -566,7 +566,7 @@ public class Main {
      * @return true if it is a valid main command, false if not
      */
     private static boolean isCommand(String arg) {
-        return COMMANDS.MIGRATE.equals(arg)
+        return COMMANDS.MIGRATE.equalsIgnoreCase(arg)
                 || COMMANDS.MIGRATE_SQL.equalsIgnoreCase(arg)
                 || COMMANDS.UPDATE.equalsIgnoreCase(arg)
                 || COMMANDS.UPDATE_SQL.equalsIgnoreCase(arg)
@@ -622,7 +622,7 @@ public class Main {
      * @return true if arg is a valid main command and needs no special parameters, false in all other cases
      */
     private static boolean isNoArgCommand(String arg) {
-        return COMMANDS.MIGRATE.equals(arg)
+        return COMMANDS.MIGRATE.equalsIgnoreCase(arg)
                 || COMMANDS.MIGRATE_SQL.equalsIgnoreCase(arg)
                 || COMMANDS.UPDATE.equalsIgnoreCase(arg)
                 || COMMANDS.UPDATE_SQL.equalsIgnoreCase(arg)
@@ -1001,7 +1001,7 @@ public class Main {
             }
 
             try {
-                if ("promptOnNonLocalDatabase".equals(entry.getKey())) {
+                if ("promptOnNonLocalDatabase".equalsIgnoreCase((String)entry.getKey())) {
                     continue;
                 }
                 if (((String) entry.getKey()).startsWith("parameter.")) {
@@ -1174,7 +1174,7 @@ public class Main {
             return;
         }
 
-        if (arg.toLowerCase().equals("--" + OPTIONS.FORCE) || arg.toLowerCase().equals("--" + OPTIONS.HELP)) {
+        if (arg.toLowerCase().equalsIgnoreCase("--" + OPTIONS.FORCE) || arg.toLowerCase().equalsIgnoreCase("--" + OPTIONS.HELP)) {
             arg = arg + "=true";
         }
 
@@ -1622,13 +1622,13 @@ public class Main {
                     );
                 }
                 return;
-            } else if (COMMANDS.ROLLBACK_ONE_CHANGE_SET.equals(command)) {
+            } else if (COMMANDS.ROLLBACK_ONE_CHANGE_SET.equalsIgnoreCase(command)) {
                 Map<String, Object> argsMap = new HashMap<>();
                 loadChangeSetInfoToMap(argsMap);
                 LiquibaseCommand liquibaseCommand = createLiquibaseCommand(database, liquibase, COMMANDS.ROLLBACK_ONE_CHANGE_SET, argsMap);
                 liquibaseCommand.execute();
                 return;
-            } else if (COMMANDS.ROLLBACK_ONE_CHANGE_SET_SQL.equals(command)) {
+            } else if (COMMANDS.ROLLBACK_ONE_CHANGE_SET_SQL.equalsIgnoreCase(command)) {
                 Writer outputWriter = getOutputWriter();
                 Map<String, Object> argsMap = new HashMap<>();
                 loadChangeSetInfoToMap(argsMap);
@@ -1639,13 +1639,13 @@ public class Main {
                 outputWriter.flush();
                 outputWriter.close();
                 return;
-            } else if (COMMANDS.ROLLBACK_ONE_UPDATE.equals(command)) {
+            } else if (COMMANDS.ROLLBACK_ONE_UPDATE.equalsIgnoreCase(command)) {
                 Map<String, Object> argsMap = new HashMap<>();
                 argsMap.put("deploymentId", getCommandParam(OPTIONS.DEPLOYMENT_ID, null));
                 LiquibaseCommand liquibaseCommand = createLiquibaseCommand(database, liquibase, COMMANDS.ROLLBACK_ONE_UPDATE, argsMap);
                 liquibaseCommand.execute();
                 return;
-            } else if (COMMANDS.ROLLBACK_ONE_UPDATE_SQL.equals(command)) {
+            } else if (COMMANDS.ROLLBACK_ONE_UPDATE_SQL.equalsIgnoreCase(command)) {
                 Writer outputWriter = getOutputWriter();
                 Map<String, Object> argsMap = new HashMap<>();
                 argsMap.put("deploymentId", getCommandParam(OPTIONS.DEPLOYMENT_ID, null));
@@ -1684,10 +1684,10 @@ public class Main {
             } else if (COMMANDS.SYNC_HUB.equalsIgnoreCase(command)) {
                 executeSyncHub(database, liquibase);
                 return;
-            } else if (COMMANDS.DROP_ALL.equals(command)) {
+            } else if (COMMANDS.DROP_ALL.equalsIgnoreCase(command)) {
                 String liquibaseHubApiKey = hubConfiguration.getLiquibaseHubApiKey();
                 String hubMode = hubConfiguration.getLiquibaseHubMode();
-                if (liquibaseHubApiKey != null && ! hubMode.toLowerCase().equals("off")) {
+                if (liquibaseHubApiKey != null && ! hubMode.toLowerCase().equalsIgnoreCase("off")) {
                     if (hubConnectionId == null && changeLogFile == null) {
                         String warningMessage =
                            "The dropAll command used with a hub.ApiKey and hub.mode='" + hubMode + "'\n" +
