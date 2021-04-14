@@ -19,10 +19,7 @@ import liquibase.diff.DiffGeneratorFactory;
 import liquibase.diff.DiffResult;
 import liquibase.diff.compare.CompareControl;
 import liquibase.diff.output.changelog.DiffToChangeLog;
-import liquibase.exception.DatabaseException;
-import liquibase.exception.LiquibaseException;
-import liquibase.exception.LockException;
-import liquibase.exception.UnexpectedLiquibaseException;
+import liquibase.exception.*;
 import liquibase.executor.Executor;
 import liquibase.executor.ExecutorService;
 import liquibase.executor.LoggingExecutor;
@@ -234,13 +231,19 @@ public class Liquibase implements AutoCloseable {
 
                 ChangeLogHistoryServiceFactory.getInstance().getChangeLogService(database).generateDeploymentId();
 
-                changeLog.validate(database, contexts, labelExpression);
+                Boolean upgradeToPro = validateChangelog(contexts, labelExpression, changeLog);
+                if (upgradeToPro == null) {
+                    return;
+                }
 
                 //
                 // Let the user know that they can register for Hub
                 //
                 hubUpdater = new HubUpdater(new Date(), changeLog, database);
-                hubUpdater.register(changeLogFile);
+                if (! hubUpdater.register(changeLogFile, upgradeToPro)) {
+                    return;
+                }
+
 
                 //
                 // Create or retrieve the Connection if this is not SQL generation
@@ -292,6 +295,71 @@ public class Liquibase implements AutoCloseable {
                 setChangeExecListener(null);
             }
         });
+    }
+
+    private Boolean validateChangelog(Contexts contexts, LabelExpression labelExpression, DatabaseChangeLog changeLog)
+        throws LiquibaseException {
+        boolean trialIsAvailable = true;
+        boolean upgradeToPro = false;
+        try {
+            changeLog.validate(database, contexts, labelExpression);
+        }
+        catch (final ValidationFailedException vfe) {
+            //
+            // Hub is off
+            //
+            HubConfiguration hubConfiguration = LiquibaseConfiguration.getInstance().getConfiguration(HubConfiguration.class);
+            final HubService hubService = Scope.getCurrentScope().getSingleton(HubServiceFactory.class).getService();
+            if (!hubService.isOnline()) {
+                throw vfe;
+            }
+
+            //
+            // There are non-Pro license validation errors
+            //
+            ValidationErrors validationErrors = vfe.getValidationErrors();
+            List<String> messages = validationErrors.getErrorMessages();
+            for (String message : messages) {
+                if (! message.contains("is not allowed without a valid Liquibase Pro License")) {
+                    throw vfe;
+                }
+            }
+            //
+            // No trial license available
+            //
+            if (! trialIsAvailable) {
+                throw vfe;
+            }
+
+            //
+            // Prompt the user to see if they want a Pro license
+            //
+            if (hubConfiguration.getLiquibaseHubApiKey() == null) {
+                upgradeToPro = true;
+            }
+            else {
+                String promptString =
+                    "You need a Liquibase Pro license to run this operation.  " +
+                        "Would you like to sign up for a free 30-day trial? (Y/N) ";
+                String input = Scope.getCurrentScope().getUI().prompt(promptString, "N", (input1, returnType) -> {
+                    input1 = input1.trim().toLowerCase();
+                    if (!(input1.equals("s") || input1.equals("n") || input1.contains("@"))) {
+                        throw new IllegalArgumentException("Invalid input '" + input1 + "'");
+                    }
+                    return input1;
+                }, String.class);
+                if (input.equals("y")) {
+                    //
+                    // Hit the end point to create a Pro license and get out
+                    //
+                    return null;
+                } else if (input.equals("n")) {
+                    throw vfe;
+                }
+            }
+            upgradeToPro = true;
+        }
+        return upgradeToPro;
     }
 
     /**

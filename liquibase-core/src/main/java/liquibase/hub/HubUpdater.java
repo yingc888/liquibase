@@ -338,21 +338,35 @@ public class HubUpdater {
 
     /**
      *
-     * Automatically register the current user with Hub
+     * Automatically register the current user with Hub and optionally upgrade to Pro license
      *
      * @param  changeLogFile             ChangeLog path for this operation
+     * @return boolean                   True if we should continue on False if not
      * @throws LiquibaseException        Thrown if registration fails
      * @throws CommandExecutionException Thrown if registerChangeLog fails
      *
      */
-    public void register(String changeLogFile)
-        throws LiquibaseException, CommandExecutionException {
+    public boolean register(String changeLogFile) throws LiquibaseException, CommandExecutionException {
+        return register(changeLogFile, false);
+    }
+
+    /**
+     *
+     * Automatically register the current user with Hub and optionally upgrade to Pro license
+     *
+     * @param  changeLogFile             ChangeLog path for this operation
+     * @param  promptToUpgrade           If true then ask the user if they want to upgrade
+     * @throws LiquibaseException        Thrown if registration fails
+     * @throws CommandExecutionException Thrown if registerChangeLog fails
+     *
+     */
+    public boolean register(String changeLogFile, boolean promptToUpgrade) throws LiquibaseException, CommandExecutionException {
         //
         // If our current Executor is a LoggingExecutor then just return since we will not update Hub
         //
         Executor executor = Scope.getCurrentScope().getSingleton(ExecutorService.class).getExecutor("jdbc", database);
         if (executor instanceof LoggingExecutor) {
-          return;
+            return true;
         }
 
         //
@@ -361,7 +375,7 @@ public class HubUpdater {
         HubConfiguration hubConfiguration = LiquibaseConfiguration.getInstance().getConfiguration(HubConfiguration.class);
         final HubService hubService = Scope.getCurrentScope().getSingleton(HubServiceFactory.class).getService();
         if (!hubService.isOnline()) {
-            return;
+            return true;
         }
 
         //
@@ -369,9 +383,36 @@ public class HubUpdater {
         //   1.  We have a key already OR
         //   2.  We have a changeLogId already
         //
-        if (!StringUtil.isEmpty(hubConfiguration.getLiquibaseHubApiKey()) ||
-            changeLog.getChangeLogId() != null) {
-            return;
+        if (!StringUtil.isEmpty(hubConfiguration.getLiquibaseHubApiKey()) || changeLog.getChangeLogId() != null) {
+            //
+            // Prompt the user to see if they want a Pro license
+            //
+            if (promptToUpgrade) {
+                String promptString =
+                    "You need a Liquibase Pro license to run this operation.  " +
+                        "Would you like to sign up for a free 30-day trial? (Y/N) ";
+                String input = Scope.getCurrentScope().getUI().prompt(promptString, "N", (input1, returnType) -> {
+                    input1 = input1.trim().toLowerCase();
+                    if (!(input1.equals("y") || input1.equals("n"))) {
+                        throw new IllegalArgumentException("Invalid input '" + input1 + "'");
+                    }
+                    return input1;
+                }, String.class);
+                if (input.equals("y")) {
+                    //
+                    // Hit the Hub endpoint to create the Pro license and just return
+                    //
+                    String message = "Liquibase Pro License created.  Please restart the application.";
+                    Scope.getCurrentScope().getUI().sendMessage(message);
+                } else {
+                    String message = "The operation cannot be performed without a Liquibase Pro license.\n" +
+                        "Please visit https://www.liquibase.com to purchase a license.";
+                    Scope.getCurrentScope().getUI().sendMessage(message);
+                    throw new LiquibaseException(message);
+                }
+                return false;
+            }
+            return true;
         }
 
         //
@@ -442,66 +483,96 @@ public class HubUpdater {
                     "No operation report will be generated.";
                 Scope.getCurrentScope().getUI().sendMessage(message);
                 Scope.getCurrentScope().getLog(HubUpdater.class).warning(message);
-                return;
             }
             if (registerResponse == null) {
                 String message = "Account creation failed for email address '" + input + "'.\n" +
                     "No operation report will be generated.";
                 Scope.getCurrentScope().getUI().sendMessage(message);
                 Scope.getCurrentScope().getLog(HubUpdater.class).warning(message);
-                return;
             }
-            String message = null;
-            try {
-                //
-                // Update the properties file
-                //
-                writeToPropertiesFile(defaultsFile, "\nliquibase.hub.apiKey=" + registerResponse.getApiKey() + "\n");
+            else {
+                finishRegistration(changeLogFile, hubConfiguration, defaultsFile, registerResponse);
+            }
 
-                //
-                // If there is no liquibase.hub.mode setting then add one with value 'all'
-                // Do not update liquibase.hub.mode if it is already set
-                //
-                ConfigurationProperty hubModeProperty = hubConfiguration.getProperty(HubConfiguration.LIQUIBASE_HUB_MODE);
-                if (! hubModeProperty.getWasOverridden()) {
-                    writeToPropertiesFile(defaultsFile, "\nliquibase.hub.mode=all\n");
-                    message = "* Updated properties file " + defaultsFile + " to set liquibase.hub properties";
+            //
+            // Prompt the user to see if they want a Pro license
+            //
+            if (promptToUpgrade && hubConfiguration.getLiquibaseHubApiKey() != null) {
+                promptString =
+                    "You need a Liquibase Pro license to run this operation.  " +
+                        "Would you like to sign up for a free 30-day trial? (Y/N) ";
+                input = Scope.getCurrentScope().getUI().prompt(promptString, "N", (input1, returnType) -> {
+                    input1 = input1.trim().toLowerCase();
+                    if (!(input1.equals("y") || input1.equals("n"))) {
+                        throw new IllegalArgumentException("Invalid input '" + input1 + "'");
+                    }
+                    return input1;
+                }, String.class);
+                if (input.equals("y")) {
+                    //
+                    // Hit the Hub endpoint to create the Pro license and just return
+                    //
+                    String message = "Liquibase Pro License created.  Please restart the application.";
                     Scope.getCurrentScope().getUI().sendMessage(message);
-                    Scope.getCurrentScope().getLog(getClass()).info(message);
-                } else {
-                    message = "* Updated the liquibase.hub.apiKey property.";
-                    String message2 = "The liquibase.hub.mode is already set to " + hubConfiguration.getLiquibaseHubMode() + ". It will not be updated.";
-                    Scope.getCurrentScope().getUI().sendMessage(message);
-                    Scope.getCurrentScope().getUI().sendMessage(message2);
-                    Scope.getCurrentScope().getLog(getClass()).warning(message);
-                    Scope.getCurrentScope().getLog(getClass()).warning(message2);
                 }
-
-                //
-                // register the changelog
-                // Update the API key in HubConfiguration
-                //
-                message = "* Registering changelog file " + changeLogFile + " with Hub";
-                Scope.getCurrentScope().getUI().sendMessage(message);
-                Scope.getCurrentScope().getLog(getClass()).info(message);
-                hubConfiguration.setLiquibaseHubApiKey(registerResponse.getApiKey());
-                registerChangeLog(registerResponse.getProjectId(), changeLog, changeLogFile);
-
-                message = "Great! Your free operation and deployment reports will be available to you after your local Liquibase commands complete.";
-                Scope.getCurrentScope().getUI().sendMessage(message);
-                Scope.getCurrentScope().getLog(getClass()).info(message);
-            } catch (IOException ioe) {
-                message = "Unable to write information to liquibase.properties: " + ioe.getMessage() + "\n" +
-                    "Please check your permissions.  No operations will be reported.";
-                Scope.getCurrentScope().getUI().sendMessage(message);
-                Scope.getCurrentScope().getLog(getClass()).warning(message);
-            } catch (CommandExecutionException cee) {
-                message = "Unable to register changelog: " + cee.getMessage() + "\n" +
-                    "No operations will be reported.";
-                Scope.getCurrentScope().getUI().sendMessage(message);
-                Scope.getCurrentScope().getLog(getClass()).warning(message);
-                hubConfiguration.setLiquibaseHubApiKey(null);
+                return false;
             }
+        }
+        return true;
+    }
+
+    private void finishRegistration(String changeLogFile, HubConfiguration hubConfiguration, File defaultsFile, HubRegisterResponse registerResponse)
+        throws LiquibaseException {
+        String message = null;
+        try {
+            //
+            // Update the properties file
+            //
+            writeToPropertiesFile(defaultsFile, "\nliquibase.hub.apiKey=" + registerResponse.getApiKey() + "\n");
+
+            //
+            // If there is no liquibase.hub.mode setting then add one with value 'all'
+            // Do not update liquibase.hub.mode if it is already set
+            //
+            ConfigurationProperty hubModeProperty = hubConfiguration.getProperty(HubConfiguration.LIQUIBASE_HUB_MODE);
+            if (! hubModeProperty.getWasOverridden()) {
+                writeToPropertiesFile(defaultsFile, "\nliquibase.hub.mode=all\n");
+                message = "* Updated properties file " + defaultsFile + " to set liquibase.hub properties";
+                Scope.getCurrentScope().getUI().sendMessage(message);
+                Scope.getCurrentScope().getLog(getClass()).info(message);
+            } else {
+                message = "* Updated the liquibase.hub.apiKey property.";
+                String message2 = "The liquibase.hub.mode is already set to " + hubConfiguration.getLiquibaseHubMode() + ". It will not be updated.";
+                Scope.getCurrentScope().getUI().sendMessage(message);
+                Scope.getCurrentScope().getUI().sendMessage(message2);
+                Scope.getCurrentScope().getLog(getClass()).warning(message);
+                Scope.getCurrentScope().getLog(getClass()).warning(message2);
+            }
+
+            //
+            // register the changelog
+            // Update the API key in HubConfiguration
+            //
+            message = "* Registering changelog file " + changeLogFile + " with Hub";
+            Scope.getCurrentScope().getUI().sendMessage(message);
+            Scope.getCurrentScope().getLog(getClass()).info(message);
+            hubConfiguration.setLiquibaseHubApiKey(registerResponse.getApiKey());
+            registerChangeLog(registerResponse.getProjectId(), changeLog, changeLogFile);
+
+            message = "Great! Your free operation and deployment reports will be available to you after your local Liquibase commands complete.";
+            Scope.getCurrentScope().getUI().sendMessage(message);
+            Scope.getCurrentScope().getLog(getClass()).info(message);
+        } catch (IOException ioe) {
+            message = "Unable to write information to liquibase.properties: " + ioe.getMessage() + "\n" +
+                "Please check your permissions.  No operations will be reported.";
+            Scope.getCurrentScope().getUI().sendMessage(message);
+            Scope.getCurrentScope().getLog(getClass()).warning(message);
+        } catch (CommandExecutionException cee) {
+            message = "Unable to register changelog: " + cee.getMessage() + "\n" +
+                "No operations will be reported.";
+            Scope.getCurrentScope().getUI().sendMessage(message);
+            Scope.getCurrentScope().getLog(getClass()).warning(message);
+            hubConfiguration.setLiquibaseHubApiKey(null);
         }
     }
 

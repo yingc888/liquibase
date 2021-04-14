@@ -27,6 +27,10 @@ public class ValidationFailedException extends MigrationFailedException {
     private List<Throwable> changeValidationExceptions;
     private ValidationErrors validationErrors;
 
+    public ValidationErrors getValidationErrors() {
+        return validationErrors;
+    }
+
     public ValidationFailedException(ValidatingVisitor changeLogHandler) {
         this.invalidMD5Sums = changeLogHandler.getInvalidMD5Sums();
         this.failedPreconditions = changeLogHandler.getFailedPreconditions();
