@@ -257,21 +257,22 @@ context.getBooleanVariable("liquibase.addToPath")</condition>
               <action id="780" beanClass="com.install4j.runtime.beans.actions.misc.RunExecutableAction" actionElevationType="elevated" rollbackBarrierExitCode="0">
                 <serializedBean>
                   <property name="arguments" type="array" elementType="string" length="8">
-                    <element index="0">${installer:liquibase.platformType}</element>
-                    <element index="1">${installer:liquibase.hostname}</element>
-                    <element index="2">${installer:liquibase.portnumber}</element>
-                    <element index="3">${installer:liquibase.serviceName}</element>
-                    <element index="4">${installer:liquibase.username}</element>
-                    <element index="5">${installer:liquibase.password}</element>
-                    <element index="6">${installer:liquibase.database}</element>
-                    <element index="7">${installer:liquibase.projectName}</element>
+                    <element index="0">-t+${installer:liquibase.platformType}</element>
+                    <element index="1">-h+${installer:liquibase.hostname}</element>
+                    <element index="2">-n+${installer:liquibase.portnumber}</element>
+                    <element index="3">-s+${installer:liquibase.serviceName}</element>
+                    <element index="4">-u+${installer:liquibase.username}</element>
+                    <element index="5">-p+${installer:liquibase.password}</element>
+                    <element index="6">-d+${installer:liquibase.database}</element>
+                    <element index="7">-o+${installer:liquibase.projectName}</element>
                   </property>
                   <property name="executable">
                     <object class="java.io.File">
                       <string>project_setup.sh</string>
                     </object>
                   </property>
-                  <property name="stderrRedirectionMode" type="enum" class="com.install4j.runtime.installer.helper.launching.OutputRedirectionMode" value="INHERIT" />
+                  <property name="stderrRedirectionMode" type="enum" class="com.install4j.runtime.installer.helper.launching.OutputRedirectionMode" value="VARIABLE" />
+                  <property name="stderrVariableName" type="string">liquibase.projectError</property>
                   <property name="stdinRedirectionMode" type="enum" class="com.install4j.runtime.installer.helper.launching.InputRedirectionMode" value="INHERIT" />
                   <property name="stdoutRedirectionMode" type="enum" class="com.install4j.runtime.installer.helper.launching.OutputRedirectionMode" value="VARIABLE" />
                   <property name="stdoutVariableName" type="string">liquibase.projectError</property>
@@ -373,7 +374,7 @@ return;
             <actions>
               <action id="885" beanClass="com.install4j.runtime.beans.actions.finish.ShowURLAction" actionElevationType="none" rollbackBarrierExitCode="0">
                 <serializedBean>
-                  <property name="urlSpec" type="string">file://${installer:sys.installationDir}/examples/${installer:sys.installationDir}</property>
+                  <property name="urlSpec" type="string">file://${installer:sys.installationDir}/examples/LiquibaseProjectCreatorRunningYourFirstUpdate.html</property>
                 </serializedBean>
                 <condition>return !context.isUnattended() &amp;&amp; context.getBooleanVariable("liquibase.openGettingStarted");</condition>
               </action>
@@ -393,6 +394,12 @@ return true;</property>
               <formComponent id="21" beanClass="com.install4j.runtime.beans.formcomponents.MultilineLabelComponent" insetBottom="10">
                 <serializedBean>
                   <property name="labelText" type="string">${form:finishedMessage}</property>
+                </serializedBean>
+              </formComponent>
+              <formComponent name="Script Output" id="888" beanClass="com.install4j.runtime.beans.formcomponents.HtmlDisplayFormComponent">
+                <serializedBean>
+                  <property name="displayedText" type="string">${installer:liquibase.projectError}</property>
+                  <property name="textSource" type="enum" class="com.install4j.runtime.beans.screens.components.TextSource" value="DIRECT" />
                 </serializedBean>
               </formComponent>
               <formComponent name="Show Getting Started" id="886" beanClass="com.install4j.runtime.beans.formcomponents.CheckboxComponent">
@@ -729,7 +736,7 @@ return console.askYesNo(message, true);
     </macosFolder>
   </mediaSets>
   <buildIds buildAll="false">
-    <mediaSet refId="153" />
+    <mediaSet refId="154" />
   </buildIds>
   <buildOptions verbose="true" disableJreBundling="true" />
 </install4j>
