@@ -23,14 +23,14 @@ import liquibase.exception.*;
 import liquibase.executor.Executor;
 import liquibase.executor.ExecutorService;
 import liquibase.executor.LoggingExecutor;
-import liquibase.hub.HubService;
-import liquibase.hub.HubServiceFactory;
-import liquibase.hub.HubUpdater;
-import liquibase.hub.LiquibaseHubException;
+import liquibase.hub.*;
 import liquibase.hub.listener.HubChangeExecListener;
 import liquibase.hub.model.Connection;
 import liquibase.hub.model.HubChangeLog;
+import liquibase.hub.model.LicenseKey;
 import liquibase.hub.model.Operation;
+import liquibase.license.LicenseService;
+import liquibase.license.LicenseServiceFactory;
 import liquibase.lockservice.DatabaseChangeLogLock;
 import liquibase.lockservice.LockService;
 import liquibase.lockservice.LockServiceFactory;
@@ -231,7 +231,8 @@ public class Liquibase implements AutoCloseable {
 
                 ChangeLogHistoryServiceFactory.getInstance().getChangeLogService(database).generateDeploymentId();
 
-                Boolean upgradeToPro = validateChangelog(contexts, labelExpression, changeLog);
+                hubUpdater = new HubUpdater(new Date(), changeLog, database);
+                Boolean upgradeToPro = validateChangelog(contexts, labelExpression, changeLog, hubUpdater);
                 if (upgradeToPro == null) {
                     return;
                 }
@@ -239,7 +240,6 @@ public class Liquibase implements AutoCloseable {
                 //
                 // Let the user know that they can register for Hub
                 //
-                hubUpdater = new HubUpdater(new Date(), changeLog, database);
                 if (! hubUpdater.register(changeLogFile, upgradeToPro)) {
                     return;
                 }
@@ -297,7 +297,7 @@ public class Liquibase implements AutoCloseable {
         });
     }
 
-    private Boolean validateChangelog(Contexts contexts, LabelExpression labelExpression, DatabaseChangeLog changeLog)
+    private Boolean validateChangelog(Contexts contexts, LabelExpression labelExpression, DatabaseChangeLog changeLog, HubUpdater hubUpdater)
         throws LiquibaseException {
         boolean trialIsAvailable = true;
         boolean upgradeToPro = false;
@@ -305,15 +305,6 @@ public class Liquibase implements AutoCloseable {
             changeLog.validate(database, contexts, labelExpression);
         }
         catch (final ValidationFailedException vfe) {
-            //
-            // Hub is off
-            //
-            HubConfiguration hubConfiguration = LiquibaseConfiguration.getInstance().getConfiguration(HubConfiguration.class);
-            final HubService hubService = Scope.getCurrentScope().getSingleton(HubServiceFactory.class).getService();
-            if (!hubService.isOnline()) {
-                throw vfe;
-            }
-
             //
             // There are non-Pro license validation errors
             //
@@ -324,42 +315,165 @@ public class Liquibase implements AutoCloseable {
                     throw vfe;
                 }
             }
+
             //
-            // No trial license available
+            // Hub is off
+            // Just rethrow the exception with the validation errors
             //
-            if (! trialIsAvailable) {
+            HubConfiguration hubConfiguration = LiquibaseConfiguration.getInstance().getConfiguration(HubConfiguration.class);
+            final HubService hubService = Scope.getCurrentScope().getSingleton(HubServiceFactory.class).getService();
+            if (!hubService.isOnline()) {
                 throw vfe;
             }
 
             //
-            // Prompt the user to see if they want a Pro license
+            // Hub is available
+            // Check to see if the license has expired
+            //
+            if (handleExpired(hubUpdater, hubService)) {
+                return null;
+            }
+
+            //
+            // No trial license available
+            //
+            List<LicenseKey> keys = hubService.getLicenses();
+            if (keys.size() > 0) {
+                String message = "You have an expired Liquibase Pro license and no trial license is available.  Please visit https://www.liqiubase.com.";
+                Scope.getCurrentScope().getLog(Liquibase.class).warning(message);
+                throw new LiquibaseException(message);
+            }
+
+            //
+            // If we have no API key then just return
             //
             if (hubConfiguration.getLiquibaseHubApiKey() == null) {
-                upgradeToPro = true;
+                return true;
             }
-            else {
-                String promptString =
-                    "You need a Liquibase Pro license to run this operation.  " +
-                        "Would you like to sign up for a free 30-day trial? (Y/N) ";
-                String input = Scope.getCurrentScope().getUI().prompt(promptString, "N", (input1, returnType) -> {
-                    input1 = input1.trim().toLowerCase();
-                    if (!(input1.equals("s") || input1.equals("n") || input1.contains("@"))) {
-                        throw new IllegalArgumentException("Invalid input '" + input1 + "'");
-                    }
-                    return input1;
-                }, String.class);
-                if (input.equals("y")) {
-                    //
-                    // Hit the end point to create a Pro license and get out
-                    //
-                    return null;
-                } else if (input.equals("n")) {
-                    throw vfe;
-                }
+
+            Boolean answer = promptForLicense(hubService);
+            if (answer == null) {
+                return null;
             }
             upgradeToPro = true;
         }
         return upgradeToPro;
+    }
+
+    public static Boolean promptForLicense(HubService hubService) throws LiquibaseException {
+        //
+        // Prompt the user to see if they want a Pro license
+        //
+        String promptString =
+            "You need a Liquibase Pro license to run this operation.  " +
+            "Would you like to sign up for a free 30-day trial? (Y/N) ";
+        String input = Scope.getCurrentScope().getUI().prompt(promptString, "N", (input1, returnType) -> {
+            input1 = input1.trim().toLowerCase();
+            if (!(input1.equals("y") || input1.equals("n"))) {
+                throw new IllegalArgumentException("Invalid input '" + input1 + "'");
+            }
+            return input1;
+        }, String.class);
+        input = input.toLowerCase();
+        if (input.equals("y")) {
+            //
+            // Hit the end point to create a Pro license and get out
+            //
+            String defaultsFilePath = Scope.getCurrentScope().get("defaultsFile", String.class);
+            File defaultsFile = null;
+            if (defaultsFilePath != null) {
+                defaultsFile = new File(defaultsFilePath);
+            }
+            try {
+                LicenseKey licenseKey = hubService.createProLicenseKey();
+                if (licenseKey != null) {
+                    HubUpdater.writeToPropertiesFile(defaultsFile, "\nliquibaseProLicenseKey=" + licenseKey.getKey() + "\n");
+                    String message = "Updated properties file with new Liquibase Pro license key.";
+                    Scope.getCurrentScope().getLog(Liquibase.class).info(message);
+                    Scope.getCurrentScope().getUI().sendMessage(message);
+                } else {
+                    String message = "Unable to create new Liquibase Pro license key";
+                    Scope.getCurrentScope().getLog(Liquibase.class).warning(message);
+                    Scope.getCurrentScope().getUI().sendMessage(message);
+                }
+            }
+            catch (IOException ioe) {
+                String message = "Unable to update properties file with new Liquibase Pro license key: " + ioe.getMessage();
+                Scope.getCurrentScope().getUI().sendMessage(message);
+                Scope.getCurrentScope().getLog(Liquibase.class).warning(message);
+            }
+            return null;
+        } else if (input.equals("n")) {
+            String message = "You need a Liquibase Pro license to run this operation.  Please visit https://www.liquibase.com for more information.";
+            Scope.getCurrentScope().getUI().sendMessage(message);
+            Scope.getCurrentScope().getLog(Liquibase.class).info(message);
+            return null;
+        }
+        return true;
+    }
+
+    private boolean handleExpired(HubUpdater hubUpdater, HubService hubService) throws LiquibaseException {
+        LicenseService licenseService = Scope.getCurrentScope().getSingleton(LicenseServiceFactory.class).getLicenseService();
+        if (licenseService == null) {
+            String message = "You have an expired Liquibase Pro license and no license service is available.  Please visit https://www.liqiubase.com.";
+            Scope.getCurrentScope().getLog(Liquibase.class).warning(message);
+            throw new LiquibaseException(message);
+        }
+        String licenseInfo = licenseService.getLicenseInfo();
+        if (licenseInfo.toLowerCase().contains("license has expired")) {
+            LicenseKey licenseKey = null;
+            try {
+                licenseKey = hubService.getLatestLicense();
+            }
+            catch (LiquibaseHubObjectNotFoundException lhonfe) {
+                String message = "Your license key has expired and there are no Liquibase Pro license keys available";
+                Scope.getCurrentScope().getLog(Liquibase.class).warning(message);
+                Scope.getCurrentScope().getUI().sendMessage(message);
+                throw new LiquibaseException(message);
+            }
+            String currentProLicenseKey = Scope.getCurrentScope().get("liquibaseProLicenseKey", String.class);
+            if (currentProLicenseKey != null && currentProLicenseKey.equals(licenseKey.getKey())) {
+                String message = "Your license key has expired and your key is the latest.  Please visit https://www.liquibase.com.";
+                Scope.getCurrentScope().getLog(Liquibase.class).warning(message);
+                Scope.getCurrentScope().getUI().sendMessage(message);
+                throw new LiquibaseException(message);
+            }
+
+            //
+            // If the latest is not a PRO license type then just return
+            //
+            if (! licenseKey.getType().equals("PRO")) {
+                return false;
+            }
+
+            //
+            // Make sure the key is ACTIVE
+            //
+            String status = licenseKey.getStatus();
+            if (! status.equals("ACTIVE")) {
+                String message = "Your license key has expired and there are no active Liquibase Pro license keys available";
+                Scope.getCurrentScope().getLog(Liquibase.class).warning(message);
+                throw new LiquibaseException(message);
+            }
+
+            //
+            // Update the properties file
+            //
+            HubConfiguration hubConfiguration = LiquibaseConfiguration.getInstance().getConfiguration(HubConfiguration.class);
+            String defaultsFilePath = Scope.getCurrentScope().get("defaultsFile", String.class);
+            File defaultsFile = null;
+            if (defaultsFilePath != null) {
+                defaultsFile = new File(defaultsFilePath);
+            }
+            try {
+                hubUpdater.writeToPropertiesFile(defaultsFile, "\nliquibaseProLicenseKey=" + licenseKey.getKey() + "\n");
+            }
+            catch (IOException ioe) {
+                Scope.getCurrentScope().getLog(Liquibase.class).warning("Unable to update properties file with new Liquibase Pro license key: " + ioe.getMessage());
+            }
+            return true;
+        }
+        return false;
     }
 
     /**

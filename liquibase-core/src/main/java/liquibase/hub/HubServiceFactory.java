@@ -153,6 +153,21 @@ public class HubServiceFactory extends AbstractPluginFactory<HubService> {
         }
 
         @Override
+        public LicenseKey createProLicenseKey() throws LiquibaseException {
+            return null;
+        }
+
+        @Override
+        public LicenseKey getLatestLicense() throws LiquibaseException {
+            return null;
+        }
+
+        @Override
+        public List<LicenseKey> getLicenses() throws LiquibaseException {
+            return null;
+        }
+
+        @Override
         public void sendOperationChangeEvent(OperationChangeEvent operationChangeEvent) throws LiquibaseException {
 
         }

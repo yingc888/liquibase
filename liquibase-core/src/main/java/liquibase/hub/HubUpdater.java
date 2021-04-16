@@ -579,7 +579,7 @@ public class HubUpdater {
     //
     // Write the string to a properties file
     //
-    private void writeToPropertiesFile(File defaultsFile, String stringToWrite) throws IOException {
+    public static void writeToPropertiesFile(File defaultsFile, String stringToWrite) throws IOException {
         String encoding = LiquibaseConfiguration.getInstance().getConfiguration(GlobalConfiguration.class).getOutputEncoding();
         try (RandomAccessFile randomAccessFile = new RandomAccessFile(defaultsFile, "rw")) {
             randomAccessFile.seek(defaultsFile.length());

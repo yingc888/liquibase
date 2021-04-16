@@ -44,6 +44,21 @@ public class MockHubService implements HubService {
     }
 
     @Override
+    public LicenseKey getLatestLicense() throws LiquibaseException {
+        return null;
+    }
+
+    @Override
+    public List<LicenseKey> getLicenses() throws LiquibaseException {
+        return null;
+    }
+
+    @Override
+    public LicenseKey createProLicenseKey() throws LiquibaseException {
+        return null;
+    }
+
+    @Override
     public Project createProject(Project project) {
         return null;
     }

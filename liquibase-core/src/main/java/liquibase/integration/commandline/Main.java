@@ -18,7 +18,11 @@ import liquibase.diff.output.DiffOutputControl;
 import liquibase.diff.output.ObjectChangeFilter;
 import liquibase.diff.output.StandardObjectChangeFilter;
 import liquibase.exception.*;
+import liquibase.hub.HubService;
 import liquibase.hub.HubServiceFactory;
+import liquibase.hub.HubUpdater;
+import liquibase.hub.LiquibaseHubObjectNotFoundException;
+import liquibase.hub.model.LicenseKey;
 import liquibase.integration.IntegrationDetails;
 import liquibase.license.*;
 import liquibase.lockservice.LockService;
@@ -309,12 +313,19 @@ public class Main {
                         ui.setOutputStream(System.err);
                     }
 
+                    LicenseKey licenseKey = null;
                     LicenseService licenseService = Scope.getCurrentScope().getSingleton(LicenseServiceFactory.class).getLicenseService();
                     if (licenseService != null) {
-
                         if (main.liquibaseProLicenseKey == null) {
                             Scope.getCurrentScope().getLog(getClass()).info("No Liquibase Pro license key supplied. Please set liquibaseProLicenseKey on command line or in liquibase.properties to use Liquibase Pro features.");
                         } else {
+                            if (LiquibaseConfiguration.getInstance().getConfiguration(HubConfiguration.class).getLiquibaseHubApiKey() != null) {
+                                licenseKey = handleProLicenseRefresh(licenseService, main.liquibaseProLicenseKey, main.defaultsFile);
+                                if (licenseKey != null) {
+                                    main.liquibaseProLicenseKey = licenseKey.getKey();
+                                }
+                                main.parseDefaultPropertyFiles();
+                            }
                             Location licenseKeyLocation = new Location("property liquibaseProLicenseKey", LocationType.BASE64_STRING, main.liquibaseProLicenseKey);
                             LicenseInstallResult result = licenseService.installLicense(licenseKeyLocation);
                             if (result.code != 0) {
@@ -363,6 +374,9 @@ public class Main {
                     Map<String, Object> innerScopeObjects = new HashMap<>();
                     innerScopeObjects.put("defaultsFile", main.defaultsFile);
                     innerScopeObjects.put(Scope.Attr.resourceAccessor.name(), new ClassLoaderResourceAccessor(main.configureClassLoader()));
+                    if (main.liquibaseProLicenseKey != null) {
+                        innerScopeObjects.put("liquibaseProLicenseKey", main.liquibaseProLicenseKey);
+                    }
                     Scope.child(innerScopeObjects, () -> {
                         main.doMigration();
 
@@ -413,6 +427,54 @@ public class Main {
                 return 0;
             }
         });
+    }
+
+    private static LicenseKey handleProLicenseRefresh(LicenseService licenseService, String licenseKeyParameter, String defaultsFilePath) throws LiquibaseException {
+        final HubService hubService = Scope.getCurrentScope().getSingleton(HubServiceFactory.class).getService();
+        LicenseKey licenseKey = null;
+        try {
+            licenseKey = hubService.getLatestLicense();
+        }
+        catch (LiquibaseHubObjectNotFoundException lhonfe) {
+            String message = "No license key has expired and there are no Liquibase Pro license keys available";
+            Scope.getCurrentScope().getLog(Liquibase.class).warning(message);
+        }
+        if (licenseKey == null || licenseKey.getKey() == null || licenseKey.getKey().equals(licenseKeyParameter)) {
+            return null;
+        }
+
+        //
+        // If the latest is not a PRO license type then just return
+        //
+        if (! licenseKey.getType().equals("PRO")) {
+            return null;
+        }
+
+        //
+        // Make sure the key is ACTIVE
+        //
+        String status = licenseKey.getStatus();
+        if (! status.equals("ACTIVE")) {
+            String message = "Your latest license key has is not active";
+            Scope.getCurrentScope().getLog(Liquibase.class).warning(message);
+            return null;
+        }
+        File defaultsFile = null;
+        if (defaultsFilePath != null) {
+            defaultsFile = new File(defaultsFilePath);
+        }
+        try {
+            HubUpdater.writeToPropertiesFile(defaultsFile, "\nliquibaseProLicenseKey=" + licenseKey.getKey() + "\n");
+            String message = "Refreshed license key in properties file with new Liquibase Pro license key";
+            Scope.getCurrentScope().getUI().sendMessage(message);
+            Scope.getCurrentScope().getLog(Liquibase.class).info(message);
+        }
+        catch (IOException ioe) {
+            String message = "Unable to refresh properties file with new Liquibase Pro license key: " + ioe.getMessage();
+            Scope.getCurrentScope().getUI().sendMessage(message);
+            Scope.getCurrentScope().getLog(Liquibase.class).warning(message);
+        }
+        return licenseKey;
     }
 
     private static boolean setupNeeded(Main main) throws CommandLineParsingException {
@@ -1403,12 +1465,16 @@ public class Main {
                 }
             }
             if (!commandParams.contains("--help") && !liquibaseProLicenseValid) {
-                String warningAboutCommand = command;
-                if (command.equalsIgnoreCase(COMMANDS.DIFF) && formatValue != null && !formatValue.isEmpty()) {
-                    warningAboutCommand = "diff --format=" + formatValue;
+                final HubService hubService = Scope.getCurrentScope().getSingleton(HubServiceFactory.class).getService();
+                Boolean answer = Liquibase.promptForLicense(hubService);
+                if (answer == null || ! answer) {
+                    String warningAboutCommand = command;
+                    if (command.equalsIgnoreCase(COMMANDS.DIFF) && formatValue != null && !formatValue.isEmpty()) {
+                        warningAboutCommand = "diff --format=" + formatValue;
+                    }
+                    String messageString = String.format(coreBundle.getString("no.pro.license.found"), warningAboutCommand);
+                    throw new LiquibaseException(messageString);
                 }
-                String messageString = String.format(coreBundle.getString("no.pro.license.found"), warningAboutCommand);
-                throw new LiquibaseException(messageString);
             }
         }
 

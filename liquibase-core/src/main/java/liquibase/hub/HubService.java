@@ -49,6 +49,12 @@ public interface HubService extends Plugin, PrioritizedService {
 
     OperationEvent sendOperationEvent(Operation operation, OperationEvent operationEvent) throws LiquibaseException;
 
+    LicenseKey getLatestLicense() throws LiquibaseException;
+
+    List<LicenseKey> getLicenses() throws LiquibaseException;
+
+    LicenseKey createProLicenseKey() throws LiquibaseException;
+
     /**
      * Request to shorten a URL to create a more user-friendly link to the user
      *

@@ -173,6 +173,36 @@ public class StandardHubService implements HubService {
     }
 
     @Override
+    public LicenseKey createProLicenseKey() throws LiquibaseException {
+        final UUID organizationId = getOrganization().getId();
+        SubscriptionBody subscriptionBody = new SubscriptionBody();
+        try {
+            Subscription response = http.doPost("/api/v1/organizations/" + organizationId.toString() + "/subscriptions", subscriptionBody, Subscription.class);
+            if (response != null) {
+                return response.getLicenseKey();
+            }
+        } catch (LiquibaseHubException e) {
+            throw new LiquibaseException(e.getMessage(), e);
+        }
+        return null;
+    }
+
+    @Override
+    public List<LicenseKey> getLicenses() throws LiquibaseException {
+        final UUID organizationId = getOrganization().getId();
+        Map<String, List<String>> returnMap = http.doGet("/api/v1/organizations/" + organizationId.toString() + "/subscriptions", Map.class);
+        List<String> contentList = returnMap.get("content");
+        return new ArrayList<>();
+    }
+
+    @Override
+    public LicenseKey getLatestLicense() throws LiquibaseException {
+        final UUID organizationId = getOrganization().getId();
+
+        return http.doGet("/api/v1/organizations/" + organizationId.toString() + "/latest-license", LicenseKey.class);
+    }
+
+    @Override
     public HubRegisterResponse register(String email) throws LiquibaseException {
         HubRegister hubRegister = new HubRegister();
         hubRegister.setEmail(email);

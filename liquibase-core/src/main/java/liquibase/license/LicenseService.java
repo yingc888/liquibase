@@ -75,4 +75,5 @@ public interface LicenseService extends Plugin {
    */
   int daysTilExpiration();
 
+  boolean isTrialLicense();
 }
