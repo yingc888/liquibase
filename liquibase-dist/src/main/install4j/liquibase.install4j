@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <install4j version="9.0.1" transformSequenceNumber="9">
   <directoryPresets config="../icons" />
-  <application name="Liquibase" applicationId="3799-9228-0984-2853" mediaDir="../../../target" mediaFilePattern="${compiler:sys.shortName}-${compiler:sys.platform}-installer-${compiler:sys.version}" shortName="liquibase" publisher="Datical" publisherWeb="http://liquibase.org" version="${compiler:liquibaseVersion}" allPathsRelative="true" convertDotsToUnderscores="false" macVolumeId="3059500009ae915e" javaMinVersion="1.8">
+  <application name="Liquibase" applicationId="3799-9228-0984-2853" mediaDir="../../../target" mediaFilePattern="${compiler:sys.shortName}-${compiler:sys.platform}-installer-${compiler:sys.version}" shortName="liquibase" publisher="Liquibase" publisherWeb="http://liquibase.org" version="${compiler:liquibaseVersion}${compiler:liquibaseVersion}" allPathsRelative="true" convertDotsToUnderscores="false" macVolumeId="3059500009ae915e" javaMinVersion="1.8">
     <languages>
       <principalLanguage id="en" customLocalizationFile="./messages.properties" />
     </languages>
@@ -305,7 +305,11 @@ context.getBooleanVariable("liquibase.addToPath")</condition>
                   </property>
                   <property name="selectionChangedScript">
                     <object class="com.install4j.api.beans.ScriptProperty">
-                      <property name="value" type="string">formEnvironment.getFormComponentById("605").setVisible(selectedItem.equals("Oracle"))</property>
+                      <property name="value" type="string">formEnvironment.getFormComponentById("605").setVisible(selectedItem.equals("Oracle"));
+formEnvironment.getFormComponentById("611").setVisible(!selectedItem.equals("Oracle"));
+
+return;
+</property>
                     </object>
                   </property>
                   <property name="variableName" type="string">liquibase.platformType</property>
@@ -353,6 +357,7 @@ context.getBooleanVariable("liquibase.addToPath")</condition>
                   <property name="labelText" type="string">Database</property>
                   <property name="variableName" type="string">liquibase.database</property>
                 </serializedBean>
+                <initScript>component.setVisible(false)</initScript>
               </formComponent>
               <formComponent id="887" beanClass="com.install4j.runtime.beans.formcomponents.SeparatorComponent" />
               <formComponent name="Project Name" id="884" beanClass="com.install4j.runtime.beans.formcomponents.TextfieldComponent">
@@ -368,7 +373,7 @@ context.getBooleanVariable("liquibase.addToPath")</condition>
             <actions>
               <action id="885" beanClass="com.install4j.runtime.beans.actions.finish.ShowURLAction" actionElevationType="none" rollbackBarrierExitCode="0">
                 <serializedBean>
-                  <property name="urlSpec" type="string">file://${installer:sys.installationDir}/examples/LiquibaseProjectCreatorRunningYourFirstUpdate.html</property>
+                  <property name="urlSpec" type="string">file://${installer:sys.installationDir}/examples/${installer:sys.installationDir}</property>
                 </serializedBean>
                 <condition>return !context.isUnattended() &amp;&amp; context.getBooleanVariable("liquibase.openGettingStarted");</condition>
               </action>
@@ -726,5 +731,5 @@ return console.askYesNo(message, true);
   <buildIds buildAll="false">
     <mediaSet refId="153" />
   </buildIds>
-  <buildOptions verbose="true" />
+  <buildOptions verbose="true" disableJreBundling="true" />
 </install4j>
