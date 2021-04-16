@@ -11,7 +11,7 @@
     </variables>
     <codeSigning macEnabled="true" macPkcs12File="../../../../../build-logic/certs/code-signing/datical_apple.p12" windowsEnabled="true" windowsPkcs12File="../../../../../build-logic/certs/code-signing/datical_windows.pfx" />
   </application>
-  <files preserveSymlinks="false">
+  <files defaultFileMode="777" preserveSymlinks="false">
     <mountPoints>
       <mountPoint id="411" location="examples" />
       <mountPoint id="58" />
@@ -24,7 +24,7 @@
           <entry location="liquibase" />
         </exclude>
       </dirEntry>
-      <fileEntry mountPoint="58" file="../../../target/liquibase-${compiler:liquibaseVersion}/liquibase" fileMode="755" overrideFileMode="true" />
+      <fileEntry mountPoint="58" file="../../../target/liquibase-${compiler:liquibaseVersion}/liquibase" fileMode="777" overrideFileMode="true" />
     </entries>
   </files>
   <launchers>
@@ -35,7 +35,7 @@
     <applications>
       <application id="installer" beanClass="com.install4j.runtime.beans.applications.InstallerApplication">
         <serializedBean>
-          <property name="frameHeight" type="int" value="420" />
+          <property name="frameHeight" type="int" value="470" />
         </serializedBean>
         <variables>
           <variable name="liquibase.platformType" valueClass="string" registerForResponseFile="true" />
@@ -45,8 +45,9 @@
           <variable name="liquibase.password" />
           <variable name="liquibase.database" valueClass="string" registerForResponseFile="true" />
           <variable name="liquibase.serviceName" valueClass="string" />
-          <variable name="liquibase.projectError" valueClass="string" />
+          <variable name="liquibase.scriptError" valueClass="string" />
           <variable name="liquibase.projectName" valueClass="string" />
+          <variable name="liquibase.scriptOutput" />
         </variables>
         <startup>
           <screen id="1" beanClass="com.install4j.runtime.beans.screens.StartupScreen" rollbackBarrierExitCode="0">
@@ -135,6 +136,25 @@ return console.askOkCancel(message, true);
                 <externalParametrizationPropertyNames>
                   <propertyName>updateCheck</propertyName>
                 </externalParametrizationPropertyNames>
+              </formComponent>
+              <formComponent name="Liquibase Pro Key" id="890" beanClass="com.install4j.runtime.beans.formcomponents.TextfieldComponent">
+                <serializedBean>
+                  <property name="helpText" type="string">If you signed up for a Pro subscription, then enter this key
+
+Go here to get a free evaluation key: http://www.liquibase.com/trial</property>
+                  <property name="labelText" type="string">Liquibase Pro Key</property>
+                  <property name="variableName" type="string">liquibaseProKey</property>
+                </serializedBean>
+              </formComponent>
+              <formComponent name="Hub API Key" id="891" beanClass="com.install4j.runtime.beans.formcomponents.TextfieldComponent">
+                <serializedBean>
+                  <property name="helpText" type="string">If you're interested in free schema change activity reports, signup at
+   https://hub.liquibase.com
+   
+ If you already signed up for Liquibase Hub, enter the API Key.</property>
+                  <property name="labelText" type="string">Hub API Key</property>
+                  <property name="variableName" type="string">liquibaseHubKey</property>
+                </serializedBean>
               </formComponent>
               <formComponent id="6" beanClass="com.install4j.runtime.beans.formcomponents.MultilineLabelComponent" insetTop="20">
                 <serializedBean>
@@ -272,10 +292,10 @@ context.getBooleanVariable("liquibase.addToPath")</condition>
                     </object>
                   </property>
                   <property name="stderrRedirectionMode" type="enum" class="com.install4j.runtime.installer.helper.launching.OutputRedirectionMode" value="VARIABLE" />
-                  <property name="stderrVariableName" type="string">liquibase.projectError</property>
+                  <property name="stderrVariableName" type="string">liquibase.scriptError</property>
                   <property name="stdinRedirectionMode" type="enum" class="com.install4j.runtime.installer.helper.launching.InputRedirectionMode" value="INHERIT" />
                   <property name="stdoutRedirectionMode" type="enum" class="com.install4j.runtime.installer.helper.launching.OutputRedirectionMode" value="VARIABLE" />
-                  <property name="stdoutVariableName" type="string">liquibase.projectError</property>
+                  <property name="stdoutVariableName" type="string">liquibase.scriptOutput</property>
                   <property name="wait" type="boolean" value="true" />
                   <property name="workingDirectory">
                     <object class="java.io.File">
@@ -398,7 +418,13 @@ return true;</property>
               </formComponent>
               <formComponent name="Script Output" id="888" beanClass="com.install4j.runtime.beans.formcomponents.HtmlDisplayFormComponent">
                 <serializedBean>
-                  <property name="displayedText" type="string">${installer:liquibase.projectError}</property>
+                  <property name="displayedText" type="string">${installer:liquibase.scriptOutput}</property>
+                  <property name="textSource" type="enum" class="com.install4j.runtime.beans.screens.components.TextSource" value="DIRECT" />
+                </serializedBean>
+              </formComponent>
+              <formComponent name="Script Error" id="889" beanClass="com.install4j.runtime.beans.formcomponents.HtmlDisplayFormComponent">
+                <serializedBean>
+                  <property name="displayedText" type="string">${installer:liquibase.scriptError}</property>
                   <property name="textSource" type="enum" class="com.install4j.runtime.beans.screens.components.TextSource" value="DIRECT" />
                 </serializedBean>
               </formComponent>
