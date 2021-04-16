@@ -6,15 +6,6 @@ JDBC_DRIVER_WGET=""
 CHANGELOG_BODY="--liquibase formatted sql\n"
 CHANGELOG_NAME="changelog.sql"
 
-echo "PLATFORM TYPE: $1"
-echo "hostname: $2"
-echo "portnumber: $3"
-echo "service name: $4"
-echo "username: $5"
-echo "password: $6"
-echo "database: $7"
-echo "project: $8"
-sleep 10   
 
 case $1 in
 
@@ -29,11 +20,11 @@ case $1 in
 
    ;;
 
-  postgres | postgresql)
+  postgres | postgresql | 1)
     echo -n "Postgresql"
     ;;
 
-   mongodb | Mongodb | 13)
+   mongodb | Mongodb | 6)
    JDBC_DRIVER_WGET="lib/mongodb.jar https://repo1.maven.org/maven2/org/mongodb/mongo-java-driver/3.12.8/mongo-java-driver-3.12.8.jar"
    CHANGELOG_NAME=changelog.xml
    CHANGELOG_BODY="<databaseChangeLog
@@ -61,7 +52,7 @@ case $1 in
    EXTESNSION_LATEST_VERSION=$(curl -s https://github.com/liquibase/liquibase-mongodb/releases/latest | grep -o "mongodb-.*" | sed s/'>.*'//g | sed 's/"//g'| sed s/'mongodb-'//g)
    
    wget -q --no-verbose -O ~/LB_WORKSPACE/EXTENSIONS/liquibase-mongodb-${EXTESNSION_LATEST_VERSION}.jar https://github.com/liquibase/liquibase-mongodb/releases/download/liquibase-mongodb-${EXTESNSION_LATEST_VERSION}/liquibase-mongodb-${EXTESNSION_LATEST_VERSION}.jar
-   PROPERTIES_FILE="changeLogFile: ${CHANGELOG_NAME}\nurl: mongodb://${DB_HOST}:${DB_PORT}/${DB_NAME}?authSource=admin\nusername: ${DB_USERNAME}\npassword: ${DB_PASSWORD}\nclasspath: ../EXTENSIONS/liquibase-mongodb-${EXTESNSION_LATEST_VERSION}.jar"
+   PROPERTIES_FILE="changeLogFile: ${CHANGELOG_NAME}\nurl: mongodb://$2:$3/$7?authSource=admin\nusername: $5\npassword: $6\nclasspath: ../EXTENSIONS/liquibase-mongodb-${EXTESNSION_LATEST_VERSION}.jar"
    
     ;;
 
@@ -76,14 +67,15 @@ esac
    	#echo "Folder 'LB_WORKSPACE' already exists.  Creating a project folder '$PROJ_NAME'"
         echo " "
    fi
-   mkdir -p ~/LB_WORKSPACE/$8
+   mkdir -p ~/LB_WORKSPACE/$7
    wget -q --no-verbose -O $JDBC_DRIVER_WGET
-   echo -e "$CHANGELOG_BODY" > ~/LB_WORKSPACE/$8/${CHANGELOG_NAME}
-   echo -e "$PROPERTIES_FILE" > ~/LB_WORKSPACE/$8/liquibase.properties   
+   echo -e "$CHANGELOG_BODY" > ~/LB_WORKSPACE/$7/${CHANGELOG_NAME}
+   echo -e "$PROPERTIES_FILE" > ~/LB_WORKSPACE/$7/liquibase.properties   
    echo "Here is your liquibase.properties file location:"
-   tput setaf 3;echo $(dirname ~/LB_WORKSPACE/$8/liquibase.properties);tput sgr0
+   tput setaf 3;echo $(dirname ~/LB_WORKSPACE/$7/liquibase.properties);tput sgr0
+   tput setaf 3;echo $(dirname ~/LB_WORKSPACE/$7/liquibase.properties);tput sgr0
    echo "Here is your liquibase.properties file content:"
-   tput setaf 2;cat ~/LB_WORKSPACE/$8/liquibase.properties;tput sgr0
+   tput setaf 2;cat ~/LB_WORKSPACE/$7/liquibase.properties;tput sgr0
    while true; do
    echo " "
    read -p "Would you like to connect to the database $DB_NAME (Y/N)? " yn;tput sgr0
@@ -93,13 +85,13 @@ esac
      * ) echo "Please answer Y or N.";;
     esac
    done
-   cd ~/LB_WORKSPACE/$8
+   cd ~/LB_WORKSPACE/$7
    if liquibase history > /dev/null 2>&1; then
       echo "Connection was successful!"
    else
       echo "Please check the following errors: "
-      liquibase history
-      
+      liquibase history      
    fi
-   echo Your project $8 location is here:
+   read -p "Press Enter to continue"
+   echo Your project $7 location is here:
    echo $(pwd)
