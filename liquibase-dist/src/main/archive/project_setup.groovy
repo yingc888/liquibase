@@ -2,8 +2,10 @@ import java.io.InputStream;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.nio.file.Path;
 public class project_setup {
     static def CHANGELOG_NAME = "changelog.sql"
+    static def CHANGELOG_BODY = "-- liquibase formatted sql"
     static def LATEST_VERSION = "4.3.3"
     static def currentUsersHomeDir = System.getProperty("user.home");
 	static int platformType
@@ -39,9 +41,9 @@ public class project_setup {
 	
     static void main(String[] args){
 		readInstallerEnvVariables()
+        createDirectoryStructure()
         buildJdbcUrl()
-        // createDirectoryStructure()
-        // connectToLiquibase()
+        connectToLiquibase()
     }
 	//read installer environment variables
     static void readInstallerEnvVariables() {
@@ -54,15 +56,15 @@ public class project_setup {
         //  password = System.getenv("installer:liquibase.password")
         //  database= System.getenv("installer:liquibase.database")
 		//  project = System.getenv("installer:liquibase.projectName")
-         platformType = Integer.parseInt("12")
+         platformType = Integer.parseInt("11")
 		 platform = map.get(platformType)
-         hostname = "training20.datical.net"
-         port = "1521"
+         hostname = "XIA78464.us-east-1.snowflakecomputing.com"
+         port = "443"
          service = "BUCKET_02"
-         username = "HR"
-         password = "password"
-         database= "mydatabase"
-		 project = "Postgres_Project"
+         username = "LIQUIBASE"
+         password = "Password123"
+         database= "MYDB"
+		 project = "Snowflake_Project"
     }
 	//construct jdbc url based on platform type,download drivers
     static void buildJdbcUrl() {
@@ -119,6 +121,7 @@ public class project_setup {
             downloadDriver(url, extensionJarFile)
             jdbcUrl = "url: mongodb://"+hostname+":"+port+"/"+database+"?authSource=admin"+"\n"+"username: "+username+"\n"+"password: "+password+"\nclasspath: ../extensions/liquibase-"+platform+"-"+LATEST_VERSION+".jar\n"
             url = new URL("https://repo1.maven.org/maven2/org/mongodb/mongo-java-driver/3.12.8/mongo-java-driver-3.12.8.jar");
+            CHANGELOG_BODY = "<databaseChangeLog\n\txmlns=\"http://www.liquibase.org/xml/ns/dbchangelog\"\n\txmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\n\txmlns:ext=\"http://www.liquibase.org/xml/ns/dbchangelog-ext\"\n\txsi:schemaLocation=\"http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.0.xsd\n\thttp://www.liquibase.org/xml/ns/dbchangelog-ext http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd\">\n\n\n</databaseChangeLog>"
             
         } else if(platform.equalsIgnoreCase("vertica")){
             url = new URL("https://github.com/liquibase/liquibase-"+platform+"/releases/download/liquibase-"+platform+"Database-"+LATEST_VERSION+"/liquibase-"+platform+"Database-"+LATEST_VERSION+".jar")
@@ -158,8 +161,19 @@ public class project_setup {
         }
         driverJarFile = "lib/"+platform+".jar"
         def PROPERTIES_FILE="changeLogFile: "+CHANGELOG_NAME+"\n"+jdbcUrl
-		downloadDriver(url, driverJarFile)
+        downloadDriver(url, driverJarFile)
+        createProjectFiles(PROPERTIES_FILE, CHANGELOG_NAME, CHANGELOG_BODY)
+        println "Here is the properties file content in the following project file path "+currentUsersHomeDir+"/lb_workspace/"+project
         println "${PROPERTIES_FILE}"
+        
+        // File prop = new File("${currentUsersHomeDir}"+"/lb_workspace/"+project+"/liquibase.properties");
+        // FileWriter myWriter = new FileWriter(prop);
+        // myWriter.write(PROPERTIES_FILE);
+        // myWriter.close();
+        // File chlog = new File("${currentUsersHomeDir}"+"/lb_workspace/"+project+"/"+CHANGELOG_NAME);
+        // myWriter = new FileWriter(chlog);
+        // myWriter.write(CHANGELOG_BODY);
+        // myWriter.close();
     }
 	//Downloads jdbc driver from maven repository
 	static void downloadDriver(URL url, def fileName) {
@@ -172,9 +186,54 @@ public class project_setup {
 	}
 	//Creates directory structure needed to transfer files
     static void createDirectoryStructure() {
-        
+        try {
+
+            Path path_to_workspace = Paths.get("${currentUsersHomeDir}"+"/lb_workspace");
+            Files.createDirectories(path_to_workspace);
+            Path path_to_extensions = Paths.get("${currentUsersHomeDir}"+"/lb_workspace/extensions");
+            Files.createDirectories(path_to_extensions);
+            Path path_to_project = Paths.get("${currentUsersHomeDir}"+"/lb_workspace/"+project);
+            Files.createDirectories(path_to_project);
+
+        } catch (IOException e) {
+
+            System.err.println("Failed to create directory!" + e.getMessage());
+            }
+    }
+    
+    static void createProjectFiles(String PROPERTIES_FILE, String CHANGELOG_NAME, String CHANGELOG_BODY) {
+        try {
+            
+            File prop = new File("${currentUsersHomeDir}"+"/lb_workspace/"+project+"/liquibase.properties");
+            FileWriter myWriter = new FileWriter(prop);
+            myWriter.write(PROPERTIES_FILE);
+            myWriter.close();
+            File chlog = new File("${currentUsersHomeDir}"+"/lb_workspace/"+project+"/"+CHANGELOG_NAME);
+            myWriter = new FileWriter(chlog);
+            myWriter.write(CHANGELOG_BODY);
+            myWriter.close();
+            
+        } catch (IOException e) {
+
+            System.err.println("Failed to create directory!" + e.getMessage());
+            }
     }
 	//Run liquibase command to connect to database
     static void connectToLiquibase() {
+        String projectPath = "${currentUsersHomeDir}"+"/lb_workspace/"+project+"/"
+        String command = "liquibase history"
+  
+    try {       
+            Process process = Runtime.getRuntime().exec(command, null, new File(projectPath));
+            BufferedReader reader = new BufferedReader(
+                    new InputStreamReader(process.getInputStream()));
+            String line;
+            while ((line = reader.readLine()) != null) {
+            System.out.println(line);
+        }
+            reader.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }
