@@ -7,7 +7,7 @@ public class project_setup {
     static def CHANGELOG_NAME = "changelog.sql"
     static def CHANGELOG_BODY = "-- liquibase formatted sql"
     static def LATEST_VERSION = "4.3.3"
-    static def currentUsersHomeDir = System.getProperty("user.home");
+    static def currentUsersHomeDir = System.getProperty("user.home")
 	static int platformType
 	static def hostname
 	static def platform
@@ -17,6 +17,7 @@ public class project_setup {
 	static def password
 	static def database
 	static def project
+    static String fileSeparator = System.getProperty("file.separator")
     private static Map<Integer, String> map;
 	static
     {
@@ -71,8 +72,8 @@ public class project_setup {
         def jdbcUrl
 		def url
 		def driverJarFile
-        def extensionJarFile
 		def databasePlatform = (String)map.get(platformType)
+        def extensionJarFile = "${currentUsersHomeDir}"+ fileSeparator + "lb_workspace" + fileSeparator + "extensions" + fileSeparator + "liquibase-"+platform+"-"+LATEST_VERSION+".jar"
         if(platform.equalsIgnoreCase("oracle")) {
             jdbcUrl = "url: jdbc:oracle:thin:@"+hostname+":"+port+"/"+service+"\n"+"username: "+username+"\n"+"password: "+password+"\n"
 			url = new URL("https://repo1.maven.org/maven2/com/oracle/ojdbc/ojdbc8/19.3.0.0/ojdbc8-19.3.0.0.jar");
@@ -117,7 +118,6 @@ public class project_setup {
         } else if(platform.equalsIgnoreCase("mongodb")){
             CHANGELOG_NAME = "changelog.xml"
             url = new URL("https://github.com/liquibase/liquibase-"+platform+"/releases/download/liquibase-"+platform+"-"+LATEST_VERSION+"/liquibase-"+platform+"-"+LATEST_VERSION+".jar")  
-            extensionJarFile = "${currentUsersHomeDir}"+"/lb_workspace/extensions/liquibase-"+platform+"-"+LATEST_VERSION+".jar"
             downloadDriver(url, extensionJarFile)
             jdbcUrl = "url: mongodb://"+hostname+":"+port+"/"+database+"?authSource=admin"+"\n"+"username: "+username+"\n"+"password: "+password+"\nclasspath: ../extensions/liquibase-"+platform+"-"+LATEST_VERSION+".jar\n"
             url = new URL("https://repo1.maven.org/maven2/org/mongodb/mongo-java-driver/3.12.8/mongo-java-driver-3.12.8.jar");
@@ -125,7 +125,6 @@ public class project_setup {
             
         } else if(platform.equalsIgnoreCase("vertica")){
             url = new URL("https://github.com/liquibase/liquibase-"+platform+"/releases/download/liquibase-"+platform+"Database-"+LATEST_VERSION+"/liquibase-"+platform+"Database-"+LATEST_VERSION+".jar")
-            extensionJarFile = "${currentUsersHomeDir}"+"/lb_workspace/extensions/liquibase-"+platform+"-"+LATEST_VERSION+".jar"
             downloadDriver(url, extensionJarFile)
             jdbcUrl = "url: jdbc:vertica://"+hostname+":"+port+"/"+database+"\n"+"username: "+username+"\n"+"password: "+password+"\nclasspath: ../extensions/liquibase-"+platform+"-"+LATEST_VERSION+".jar\n"
             
@@ -134,21 +133,18 @@ public class project_setup {
             
         } else if(platform.equalsIgnoreCase("snowflake")){
             url = new URL("https://github.com/liquibase/liquibase-"+platform+"/releases/download/liquibase-"+platform+"-"+LATEST_VERSION+"/liquibase-"+platform+"-"+LATEST_VERSION+".jar")
-            extensionJarFile = "${currentUsersHomeDir}"+"/lb_workspace/extensions/liquibase-"+platform+"-"+LATEST_VERSION+".jar"
             downloadDriver(url, extensionJarFile)
             jdbcUrl = "url: jdbc:snowflake://"+hostname+":"+port+"/?db="+database+"&schema=public"+"\n"+"username: "+username+"\n"+"password: "+password+"\nclasspath: ../extensions/liquibase-"+platform+"-"+LATEST_VERSION+".jar\n"
             url = new URL("https://repo1.maven.org/maven2/net/snowflake/snowflake-jdbc/3.13.1/snowflake-jdbc-3.13.1.jar");
             
         } else if(platform.equalsIgnoreCase("redshift")){
             url = new URL("https://github.com/liquibase/liquibase-"+platform+"/releases/download/liquibase-"+platform+"-"+LATEST_VERSION+"/liquibase-"+platform+"-"+LATEST_VERSION+".jar")
-            extensionJarFile = "${currentUsersHomeDir}"+"/lb_workspace/extensions/liquibase-"+platform+"-"+LATEST_VERSION+".jar"
             downloadDriver(url, extensionJarFile)
             jdbcUrl = "url: jdbc:redshift://"+hostname+":"+port+"/"+database+"\n"+"username: "+username+"\n"+"password: "+password+"\nclasspath: ../extensions/liquibase-"+platform+"-"+LATEST_VERSION+".jar\n"
             url = new URL("https://repository.mulesoft.org/nexus/content/repositories/public/com/amazon/redshift/redshift-jdbc42/1.2.1.1001/redshift-jdbc42-1.2.1.1001.jar");
             
         } else if(platform.equalsIgnoreCase("cassandra")){
             url = new URL("https://github.com/liquibase/liquibase-"+platform+"/releases/download/liquibase-"+platform+"-"+LATEST_VERSION+"/liquibase-"+platform+"-"+LATEST_VERSION+".jar")
-            extensionJarFile = "${currentUsersHomeDir}"+"/lb_workspace/extensions/liquibase-"+platform+"-"+LATEST_VERSION+".jar"
             downloadDriver(url, extensionJarFile)
             jdbcUrl = "url: jdbc:cassandra://"+hostname+":"+port+"/"+database+";DefaultKeyspace="+database+"\n"+"username: "+username+"\n"+"password: "+password+"\nclasspath: ../extensions/liquibase-"+platform+"-"+LATEST_VERSION+".jar\n"
 // We need to find a way to do the following to get the driver:
