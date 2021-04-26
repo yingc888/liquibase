@@ -70,28 +70,31 @@ public class ProjectSetup {
         for(int i = 0; i<args.length; i++) {
             switch(i) {
                 case 0 :
+                   LATEST_VERSION = args[i]; 
+                   break;
+                case 1 :
                    platformType = Integer.parseInt(args[i]);
                    platform = map.get(platformType);
                    break;
-                case 1 :
+                case 2 :
                    hostname = args[i]; 
                    break;         
-                case 2 :
+                case 3 :
                    port = args[i];  
                    break;    
-                case 3 :
+                case 4 :
                    username = args[i];
                    break;
-                case 4 :
+                case 5 :
                    password = args[i]; 
                    break;         
-                case 5 :
+                case 6 :
                     database = args[i];
                     break;
-                case 6 :
+                case 7 :
                     project = args[i];   
                     break;       
-                case 7 :
+                case 8 :
                     service = args[i];
                     break;
              }
