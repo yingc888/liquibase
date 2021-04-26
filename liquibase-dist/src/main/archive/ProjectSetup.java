@@ -48,14 +48,16 @@ public class ProjectSetup {
         map.put(15, "sampleh2");
     }
 	
+
     public static void main(String[] args) throws Exception {
-		readInstallerEnvVariables();
+        
+        readInstallerEnvVariables(args);
         createDirectoryStructure();
         buildJdbcUrl();
         connectToLiquibase();
     }
 	//read installer environment variables
-    static void readInstallerEnvVariables() {
+    static void readInstallerEnvVariables(String[] args) {
         //  platformType = Integer.parseInt(System.getenv("installer:liquibase.platformType"));	
 		//  platform = map.get(platformType);
         //  hostname = System.getenv("installer:liquibase.hostname");
@@ -65,15 +67,36 @@ public class ProjectSetup {
         //  password = System.getenv("installer:liquibase.password");
         //  database= System.getenv("installer:liquibase.database");
 		//  project = System.getenv("installer:liquibase.projectName");
-         platformType = Integer.parseInt("11");
-		 platform = map.get(platformType);
-         hostname = "XIA78464.us-east-1.snowflakecomputing.com";
-         port = "443";
-         service = "BUCKET_02";
-         username = "LIQUIBASE";
-         password = "Password123";
-         database= "MYDB";
-		 project = "Snowflake_Project";
+        for(int i = 0; i<args.length; i++) {
+            switch(i) {
+                case 0 :
+                   platformType = Integer.parseInt(args[i]);
+                   platform = map.get(platformType);
+                   break;
+                case 1 :
+                   hostname = args[i]; 
+                   break;         
+                case 2 :
+                   port = args[i];  
+                   break;    
+                case 3 :
+                   username = args[i];
+                   break;
+                case 4 :
+                   password = args[i]; 
+                   break;         
+                case 5 :
+                    database = args[i];
+                    break;
+                case 6 :
+                    project = args[i];   
+                    break;       
+                case 7 :
+                    service = args[i];
+                    break;
+             }
+        
+        }
     }
 	//construct jdbc url based on platform type,download drivers
     static void buildJdbcUrl() throws Exception {
@@ -164,7 +187,7 @@ public class ProjectSetup {
         String PROPERTIES_FILE="changeLogFile: "+CHANGELOG_NAME+"\n"+jdbcUrl;
         downloadDriver(url, driverJarFile);
         createProjectFiles(PROPERTIES_FILE, CHANGELOG_NAME, CHANGELOG_BODY);
-        System.out.println("Here is the properties file content in the following project file path "+currentUsersHomeDir+"/lb_workspace/"+project);
+        System.out.println("Here is the properties file content in the following project file path "+currentUsersHomeDir+fileSeparator+"lb_workspace"+fileSeparator+project);
         System.out.println(PROPERTIES_FILE);
     }
 	//Downloads jdbc driver from maven repository
@@ -213,7 +236,7 @@ public class ProjectSetup {
 	//Run liquibase command to connect to database
     static void connectToLiquibase() {
         String os = System.getProperty("os.name");
-        System.out.println(os);
+        // System.out.println(os);
         String command;
         String projectPath = currentUsersHomeDir + fileSeparator + "lb_workspace" + fileSeparator + project + fileSeparator;
         if(os.contains("Win")) {
