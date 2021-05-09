@@ -11,6 +11,7 @@ import java.nio.file.Path;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 
+
 public class ProjectSetup {
     static String CHANGELOG_NAME = "changelog.sql";
     static String CHANGELOG_BODY = "-- liquibase formatted sql";
@@ -57,6 +58,7 @@ public class ProjectSetup {
         connectToLiquibase();
     }
 	//read installer environment variables
+
     static void readInstallerEnvVariables(String[] args) {
         //  platformType = Integer.parseInt(System.getenv("installer:liquibase.platformType"));	
 		//  platform = map.get(platformType);
@@ -67,37 +69,87 @@ public class ProjectSetup {
         //  password = System.getenv("installer:liquibase.password");
         //  database= System.getenv("installer:liquibase.database");
 		//  project = System.getenv("installer:liquibase.projectName");
-        for(int i = 0; i<args.length; i++) {
-            switch(i) {
-                case 0 :
-                   platformType = Integer.parseInt(args[i]);
-                   platform = map.get(platformType);
-                   break;
-                case 1 :
-                   hostname = args[i]; 
-                   break;         
-                case 2 :
-                   port = args[i];  
-                   break;    
-                case 3 :
-                   username = args[i];
-                   break;
-                case 4 :
-                   password = args[i]; 
-                   break;         
-                case 5 :
-                    database = args[i];
-                    break;
-                case 6 :
-                    project = args[i];   
-                    break;       
-                case 7 :
-                    service = args[i];
-                    break;
-             }
         
+        for (int i = 0; i < args.length; i++){
+            String arg = args[i];
+            if (arg.contains("--dbms=") || arg.contains("-t=")) {
+                platform=arg.substring(arg.lastIndexOf("=") + 1);
+            }
+            
+            else if (arg.contains("--host=") || arg.contains("-h=")) {
+                hostname=arg.substring(arg.lastIndexOf("=") + 1);
+            }
+
+            else if (arg.contains("--port=") || arg.contains("-n=")) {
+                port=arg.substring(arg.lastIndexOf("=") + 1);
+            }
+
+            else if (arg.contains("--username=") || arg.contains("-u=")) {
+                username=arg.substring(arg.lastIndexOf("=") + 1);
+            }
+
+            else if (arg.contains("--password=") || arg.contains("-p=")) {
+                password=arg.substring(arg.lastIndexOf("=") + 1);
+            }
+
+            else if (arg.contains("--service=") || arg.contains("-s=")) {
+                service=arg.substring(arg.lastIndexOf("=") + 1);
+            }
+
+            else if (arg.contains("--database=") || arg.contains("-d=")) {
+                database=arg.substring(arg.lastIndexOf("=") + 1);
+            }
+
+            else if (arg.contains("--project=") || arg.contains("-o=")) {
+                project=arg.substring(arg.lastIndexOf("=") + 1);
+            }
+
+            else {
+                
+            }
         }
+        // printing all properties
+        // System.out.println("hostname="+hostname+""+" platform="+platform+""+" port="+port+""+" service="+service+" database="+database+" project="+project+" username="+username+" password="+password);
+        
+        // if (platform == "") {
+        //             System.err.println("Usage: ParseCmdLine [-verbose] [-xn] [-output afile] filename");
+        // } else
+        // System.out.println("Success!");
     }
+    
+    //     for(int i = 0; i<args.length; i++) {
+    //         switch(i) {
+    //             case 0 :
+    //                LATEST_VERSION = args[i]; 
+    //                break;
+    //             case 1 :
+    //                platformType = Integer.parseInt(args[i]);
+    //                platform = map.get(platformType);
+    //                break;
+    //             case 2 :
+    //                hostname = args[i]; 
+    //                break;         
+    //             case 3 :
+    //                port = args[i];  
+    //                break;    
+    //             case 4 :
+    //                username = args[i];
+    //                break;
+    //             case 5 :
+    //                password = args[i]; 
+    //                break;         
+    //             case 6 :
+    //                 database = args[i];
+    //                 break;
+    //             case 7 :
+    //                 project = args[i];   
+    //                 break;       
+    //             case 8 :
+    //                 service = args[i];
+    //                 break;
+    //          }
+        
+    //     }
 	//construct jdbc url based on platform type,download drivers
     static void buildJdbcUrl() throws Exception {
         String jdbcUrl="";
