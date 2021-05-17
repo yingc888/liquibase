@@ -5,11 +5,10 @@ import liquibase.change.core.RawSQLChange;
 import liquibase.changelog.*;
 import liquibase.changelog.filter.*;
 import liquibase.changelog.visitor.*;
-import liquibase.command.CommandExecutionException;
+import liquibase.exception.CommandExecutionException;
 import liquibase.command.CommandFactory;
-import liquibase.command.core.DropAllCommand;
-import liquibase.configuration.HubConfiguration;
-import liquibase.configuration.LiquibaseConfiguration;
+import liquibase.command.CommandScope;
+import liquibase.command.core.InternalDropAllCommandStep;
 import liquibase.database.Database;
 import liquibase.database.DatabaseConnection;
 import liquibase.database.DatabaseFactory;
@@ -26,10 +25,7 @@ import liquibase.exception.UnexpectedLiquibaseException;
 import liquibase.executor.Executor;
 import liquibase.executor.ExecutorService;
 import liquibase.executor.LoggingExecutor;
-import liquibase.hub.HubService;
-import liquibase.hub.HubServiceFactory;
-import liquibase.hub.HubUpdater;
-import liquibase.hub.LiquibaseHubException;
+import liquibase.hub.*;
 import liquibase.hub.listener.HubChangeExecListener;
 import liquibase.hub.model.Connection;
 import liquibase.hub.model.HubChangeLog;
@@ -249,7 +245,6 @@ public class Liquibase implements AutoCloseable {
                 //
                 ChangeLogIterator changeLogIterator = getStandardChangelogIterator(contexts, labelExpression, changeLog);
 
-                Executor executor = Scope.getCurrentScope().getSingleton(ExecutorService.class).getExecutor("jdbc", database);
                 Connection connection = getConnection(changeLog);
                 if (connection != null) {
                     updateOperation =
@@ -257,7 +252,6 @@ public class Liquibase implements AutoCloseable {
                 }
 
                 //
-                // Only set up the listener if we are not generating SQL
                 // Make sure we don't already have a listener
                 //
                 if (connection != null) {
@@ -266,7 +260,6 @@ public class Liquibase implements AutoCloseable {
 
                 //
                 // Create another iterator to run
-                // We set the databaseChangeLog variable to null
                 //
                 ChangeLogIterator runChangeLogIterator = getStandardChangelogIterator(contexts, labelExpression, changeLog);
                 CompositeLogService compositeLogService = new CompositeLogService(true, bufferLog);
@@ -313,13 +306,12 @@ public class Liquibase implements AutoCloseable {
         if (executor instanceof LoggingExecutor) {
             return null;
         }
-        HubConfiguration hubConfiguration = LiquibaseConfiguration.getInstance().getConfiguration(HubConfiguration.class);
         String changeLogId = changeLog.getChangeLogId();
         HubUpdater hubUpdater = new HubUpdater(new Date(), changeLog, database);
         if (hubUpdater.hubIsNotAvailable(changeLogId)) {
-            if (StringUtil.isNotEmpty(hubConfiguration.getLiquibaseHubApiKey()) && changeLogId == null) {
+            if (StringUtil.isNotEmpty(HubConfiguration.LIQUIBASE_HUB_API_KEY.getCurrentValue()) && changeLogId == null) {
                 String message =
-                    "The API key '" + hubConfiguration.getLiquibaseHubApiKey() + "' was found, but no changelog ID exists.\n" +
+                    "The API key '" + HubConfiguration.LIQUIBASE_HUB_API_KEY.getCurrentValue() + "' was found, but no changelog ID exists.\n" +
                     "No operations will be reported. Register this changelog with Liquibase Hub to generate free deployment reports.\n" +
                     "Learn more at https://hub.liquibase.com.";
                 Scope.getCurrentScope().getUI().sendMessage("WARNING: " + message);
@@ -331,7 +323,7 @@ public class Liquibase implements AutoCloseable {
         //
         // Warn about the situation where there is a changeLog ID, but no API key
         //
-        if (StringUtil.isEmpty(hubConfiguration.getLiquibaseHubApiKey()) && changeLogId != null) {
+        if (StringUtil.isEmpty(HubConfiguration.LIQUIBASE_HUB_API_KEY.getCurrentValue()) && changeLogId != null) {
             String message = "The changelog ID '" + changeLogId + "' was found, but no API Key exists.\n" +
                              "No operations will be reported. Simply add a liquibase.hub.apiKey setting to generate free deployment reports.\n" +
                              "Learn more at https://hub.liquibase.com.";
@@ -529,7 +521,7 @@ public class Liquibase implements AutoCloseable {
                     }
 
                     //
-                    // Check for an already existing Listener
+                    // If we are doing Hub then set up a HubChangeExecListener
                     //
                     if (connection != null) {
                         changeExecListener = new HubChangeExecListener(updateOperation, changeExecListener);
@@ -891,7 +883,7 @@ public class Liquibase implements AutoCloseable {
                     }
 
                     //
-                    // Check for an already existing Listener
+                    // If we are doing Hub then set up a HubChangeExecListener
                     //
                     if (connection != null) {
                         changeExecListener = new HubChangeExecListener(rollbackOperation, changeExecListener);
@@ -1156,7 +1148,7 @@ public class Liquibase implements AutoCloseable {
                     }
 
                     //
-                    // Check for an already existing Listener
+                    // If we are doing Hub then set up a HubChangeExecListener
                     //
                     if (connection != null) {
                         changeExecListener = new HubChangeExecListener(rollbackOperation, changeExecListener);
@@ -1314,7 +1306,7 @@ public class Liquibase implements AutoCloseable {
                     }
 
                     //
-                    // Check for an already existing Listener
+                    // If we are doing Hub then set up a HubChangeExecListener
                     //
                     if (connection != null) {
                         changeExecListener = new HubChangeExecListener(rollbackOperation, changeExecListener);
@@ -1456,15 +1448,16 @@ public class Liquibase implements AutoCloseable {
                     }
 
                     //
-                    // Check for an already existing Listener
+                    // If we are doing Hub then set up a HubChangeExecListener
                     //
                     if (connection != null) {
                         changeLogSyncListener = new HubChangeExecListener(changeLogSyncOperation, changeExecListener);
                     }
 
+                    ChangeLogIterator runChangeLogIterator = buildChangeLogIterator(tag, changeLog, contexts, labelExpression);
                     CompositeLogService compositeLogService = new CompositeLogService(true, bufferLog);
                     Scope.child(Scope.Attr.logService.name(), compositeLogService, () -> {
-                        listLogIterator.run(new ChangeLogSyncVisitor(database, changeLogSyncListener),
+                        runChangeLogIterator.run(new ChangeLogSyncVisitor(database, changeLogSyncListener),
                                 new RuntimeEnvironment(database, contexts, labelExpression));
                     });
                     hubUpdater.postUpdateHub(changeLogSyncOperation, bufferLog);
@@ -1749,8 +1742,7 @@ public class Liquibase implements AutoCloseable {
                     resetServices();
                 }
 
-                flushOutputWriter(
-                        output);
+                flushOutputWriter(output);
             }
         });
     }
@@ -1781,23 +1773,15 @@ public class Liquibase implements AutoCloseable {
 
         CatalogAndSchema[] finalSchemas = schemas;
         try {
-            runInScope(new Scope.ScopedRunner() {
-                @Override
-                public void run() throws Exception {
+            CommandScope dropAll = new CommandScope("internalDropAll")
+                    .addArgumentValue(InternalDropAllCommandStep.DATABASE_ARG, Liquibase.this.getDatabase())
+                    .addArgumentValue(InternalDropAllCommandStep.SCHEMAS_ARG, finalSchemas);
 
-                    DropAllCommand dropAll = (DropAllCommand) CommandFactory.getInstance().getCommand("dropAll");
-                    dropAll.setDatabase(Liquibase.this.getDatabase());
-                    dropAll.setSchemas(finalSchemas);
-                    dropAll.setLiquibase(Liquibase.this);
-                    dropAll.setChangeLogFile(changeLogFile);
-
-                    try {
-                        dropAll.execute();
-                    } catch (CommandExecutionException e) {
-                        throw new DatabaseException(e);
-                    }
-                }
-            });
+            try {
+                dropAll.execute();
+            } catch (CommandExecutionException e) {
+                throw new DatabaseException(e);
+            }
         } catch (LiquibaseException e) {
             if (e instanceof DatabaseException) {
                 throw (DatabaseException) e;

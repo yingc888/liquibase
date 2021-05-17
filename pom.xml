@@ -16,11 +16,13 @@
 
     <modules>
         <module>liquibase-core</module>
+        <module>liquibase-cli</module>
         <module>liquibase-maven-plugin</module>
         <module>liquibase-cdi</module>
         <module>liquibase-integration-tests</module>
         <module>liquibase-dist</module>
         <module>liquibase-extension-examples</module>
+        <module>liquibase-extension-testing</module>
     </modules>
 
     <ciManagement>
