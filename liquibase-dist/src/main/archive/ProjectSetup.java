@@ -69,6 +69,10 @@ public class ProjectSetup {
         //  password = System.getenv("installer:liquibase.password");
         //  database= System.getenv("installer:liquibase.database");
 		//  project = System.getenv("installer:liquibase.projectName");
+        if (args.length == 0){
+            System.out.println("Usage: java -cp ProjectSetup.jar ProjectSetup [options] [-t | --dbms]=<database platform> [-h | --host]=<hostname> [-n | port]=<port number> [-u | --username]=<username> [-p | --password]=<password> [-s | --service]=<Service name (for Oracle)> [-d | --database]=<Database name> [-o | --project]=<Project name>");
+            System.exit(0);
+        }
         
         for (int i = 0; i < args.length; i++){
             String arg = args[i];
