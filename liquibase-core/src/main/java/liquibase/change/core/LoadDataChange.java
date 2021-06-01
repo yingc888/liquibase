@@ -11,11 +11,7 @@ import liquibase.database.core.MySQLDatabase;
 import liquibase.database.core.PostgresDatabase;
 import liquibase.datatype.DataTypeFactory;
 import liquibase.datatype.LiquibaseDataType;
-import liquibase.exception.DatabaseException;
-import liquibase.exception.DateParseException;
-import liquibase.exception.LiquibaseException;
-import liquibase.exception.UnexpectedLiquibaseException;
-import liquibase.exception.Warnings;
+import liquibase.exception.*;
 import liquibase.executor.ExecutorService;
 import liquibase.executor.LoggingExecutor;
 import liquibase.io.EmptyLineAndCommentSkippingInputStream;
@@ -475,9 +471,10 @@ public class LoadDataChange extends AbstractChange implements ChangeWithColumns<
                 //     of whether the 'usePreparedStatement' is set to false
                 // 2. The database supports batched statements (for improved performance) AND we are not in an
                 //    "SQL" mode (i.e. we generate an SQL file instead of actually modifying the database).
-                if
-                ((needsPreparedStatement && (databaseSupportsBatchUpdates && ! isLoggingExecutor(database))) &&
-                        hasPreparedStatementsImplemented()) {
+                if (
+                        (needsPreparedStatement || (databaseSupportsBatchUpdates && !isLoggingExecutor(database)))
+                                && hasPreparedStatementsImplemented()
+                ) {
                     anyPreparedStatements = true;
                     ExecutablePreparedStatementBase stmt =
                         this.createPreparedStatement(
