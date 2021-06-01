@@ -257,12 +257,7 @@ public class LoadDataChange extends AbstractChange implements ChangeWithColumns<
     public SqlStatement[] generateStatements(Database database) {
         boolean databaseSupportsBatchUpdates = false;
         try {
-            if (database instanceof PostgresDatabase) {
-                databaseSupportsBatchUpdates = false;
-            }
-            else {
-                databaseSupportsBatchUpdates = database.supportsBatchUpdates();
-            }
+            databaseSupportsBatchUpdates = database.supportsBatchUpdates();
         } catch (DatabaseException e) {
             throw new UnexpectedLiquibaseException(e);
         }
@@ -293,7 +288,7 @@ public class LoadDataChange extends AbstractChange implements ChangeWithColumns<
                 throw new UnexpectedLiquibaseException(e);
             }
 
-            List<ExecutablePreparedStatementBase> batchedStatements = new ArrayList<>();
+            List<ExecutablePreparedStatementBase> preparedStatements = new ArrayList<>();
             boolean anyPreparedStatements = false;
             String[] line;
             // Start at '1' to take into account the header (already processed):
@@ -489,7 +484,7 @@ public class LoadDataChange extends AbstractChange implements ChangeWithColumns<
                             database, getCatalogName(), getSchemaName(), getTableName(), columnsFromCsv,
                             getChangeSet(), Scope.getCurrentScope().getResourceAccessor()
                         );
-                    batchedStatements.add(stmt);
+                    preparedStatements.add(stmt);
                 } else {
                     InsertStatement insertStatement =
                         this.createStatement(getCatalogName(), getSchemaName(), getTableName());
@@ -518,14 +513,19 @@ public class LoadDataChange extends AbstractChange implements ChangeWithColumns<
             if (anyPreparedStatements) {
 
                 // If we have only prepared statements and the database supports batching, let's roll
-                if (databaseSupportsBatchUpdates && statements.isEmpty() && (!batchedStatements.isEmpty())) {
-                    return new SqlStatement[] {
+                if (databaseSupportsBatchUpdates && statements.isEmpty() && (!preparedStatements.isEmpty())) {
+                    if (database instanceof PostgresDatabase) {
+                        // we don't do batch updates for Postgres but we still send as a prepared statement, see LB-744
+                        return preparedStatements.toArray(new SqlStatement[preparedStatements.size()]);
+                    } else {
+                        return new SqlStatement[] {
                             new BatchDmlExecutablePreparedStatement(
                                     database, getCatalogName(), getSchemaName(),
                                     getTableName(), columns,
                                     getChangeSet(), Scope.getCurrentScope().getResourceAccessor(),
-                                    batchedStatements)
+                                    preparedStatements)
                     };
+                    }
                 } else {
                     return statements.toArray(new SqlStatement[statements.size()]);
                 }
