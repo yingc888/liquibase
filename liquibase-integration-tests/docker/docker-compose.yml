@@ -51,5 +51,18 @@ services:
       - "./mssql-init.sql:/docker-entrypoint-initdb.d/mssql-init.sql"
     entrypoint: /bin/bash /docker-entrypoint-initdb.d/mssql-init.sh
 
+#  firebird:
+#    image: jacobalberty/firebird:v3.0
+#    ports:
+#      - "3050:3050"
+#    environment:
+#      ISC_PASSWORD: LiquibasePass1
+#      FIREBIRD_DATABASE: lbcat
+#      FIREBIRD_USER: lbuser
+#      FIREBIRD_PASSWORD: LiquibasePass1
+#      EnableWireCrypt: false
+#    networks:
+#      - integration
+
 networks:
   integration:
