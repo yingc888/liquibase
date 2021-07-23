@@ -121,6 +121,7 @@ public class LiquibaseCommandLine {
                 "outputDefaultCatalog",
                 "changelogFile",
                 "hubConnectionId",
+                "hubProjectId",
                 "contexts",
                 "labels",
                 "diffTypes",
@@ -302,6 +303,17 @@ public class LiquibaseCommandLine {
                         Scope.getCurrentScope().getUI().sendMessage(String.format(coreBundle.getString("version.number"), LiquibaseUtil.getBuildVersion()));
                         Scope.getCurrentScope().getUI().sendMessage(Scope.getCurrentScope().getSingleton(LicenseServiceFactory.class).getLicenseService().getLicenseInfo());
                     }
+
+                    CommandLine.ParseResult subcommandParseResult = commandLine.getParseResult();
+                    while (subcommandParseResult.hasSubcommand()) {
+                        subcommandParseResult = subcommandParseResult.subcommand();
+                    }
+
+                    Map<String, String> changelogParameters = subcommandParseResult.matchedOptionValue("-D", new HashMap<>());
+                    if (changelogParameters.size() != 0) {
+                        Main.newCliChangelogParameters = changelogParameters;
+                    }
+
 
                     int response = commandLine.execute(finalArgs);
 
@@ -687,6 +699,15 @@ public class LiquibaseCommandLine {
                     }
 
                     subCommandSpec.addOption(builder.build());
+
+                    if (argName.equals("--changelog-file")) {
+                        final CommandLine.Model.OptionSpec.Builder paramBuilder = (CommandLine.Model.OptionSpec.Builder) CommandLine.Model.OptionSpec.builder("-D")
+                                .required(false)
+                                .type(HashMap.class)
+                                .description("Pass a name/value pair for substitution in the changelog(s)\nPass as -D<property.name>=<property.value>\n[deprecated: set changelog properties in defaults file or environment variables]")
+                                .mapFallbackValue("");
+                        subCommandSpec.add(paramBuilder.build());
+                    }
                 }
             }
 
@@ -923,7 +944,7 @@ public class LiquibaseCommandLine {
         returnList.add("--" + StringUtil.toKabobCase(def.getKey().replaceFirst("^liquibase.", "")).replace(".", "-"));
         returnList.add("--" + StringUtil.toKabobCase(def.getKey()).replace(".", "-"));
         returnList.add("--" + def.getKey().replaceFirst("^liquibase.", "").replaceAll("\\.", ""));
-
+        returnList.add("--" + def.getKey().replaceAll("\\.", ""));
         return returnList.toArray(new String[0]);
     }
 

@@ -18,6 +18,7 @@ import liquibase.io.EmptyLineAndCommentSkippingInputStream;
 import liquibase.logging.Logger;
 import liquibase.resource.ResourceAccessor;
 import liquibase.snapshot.InvalidExampleException;
+import liquibase.snapshot.SnapshotControl;
 import liquibase.snapshot.SnapshotGeneratorFactory;
 import liquibase.statement.BatchDmlExecutablePreparedStatement;
 import liquibase.statement.ExecutablePreparedStatementBase;
@@ -69,6 +70,7 @@ import static liquibase.change.ChangeParameterMetaData.ALL;
                 "If UUID type is used UUID value is stored as string and NULL in cell is supported.",
         priority = ChangeMetaData.PRIORITY_DEFAULT, appliesTo = "table",
         since = "1.7")
+@SuppressWarnings("java:S2583")
 public class LoadDataChange extends AbstractTableChange implements ChangeWithColumns<LoadDataColumnConfig> {
     /**
      * CSV Lines starting with that sign(s) will be treated as comments by default
@@ -596,7 +598,7 @@ public class LoadDataChange extends AbstractTableChange implements ChangeWithCol
         try {
             snapshotOfTable = SnapshotGeneratorFactory.getInstance().createSnapshot(
                         targetTable,
-                        database);
+                        database, new SnapshotControl(database, Table.class, Column.class));
         } catch (InvalidExampleException e) {
             throw new DatabaseException(e);
         }
