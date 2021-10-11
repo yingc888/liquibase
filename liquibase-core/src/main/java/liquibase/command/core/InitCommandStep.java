@@ -7,7 +7,7 @@ import liquibase.hub.HubService;
 import liquibase.hub.HubServiceFactory;
 import liquibase.ui.UIService;
 
-public class RegisterChangelogCommandStep extends AbstractCommandStep {
+public class InitCommandStep extends AbstractCommandStep {
 
     public static final String[] COMMAND_NAME = {"init"};
 
