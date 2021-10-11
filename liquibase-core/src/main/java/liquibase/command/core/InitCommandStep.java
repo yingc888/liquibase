@@ -6,6 +6,7 @@ import liquibase.exception.CommandExecutionException;
 import liquibase.hub.HubService;
 import liquibase.hub.HubServiceFactory;
 import liquibase.ui.UIService;
+import java.io.PrintWriter;
 
 public class InitCommandStep extends AbstractCommandStep {
 
