@@ -522,7 +522,7 @@ public class HubUpdater {
                     Scope.getCurrentScope().getLog(getClass()).warning(message2);
                 }
 
-                // register the changelog if it exist
+                // register the changelog if it exists
                 DeprecatedConfigurationValueProvider.setData(HubConfiguration.LIQUIBASE_HUB_API_KEY, registerResponse.getApiKey());
                 if (changeLog != null) {
                     message = "* Registering changelog file " + changeLogFile + " with Hub";
@@ -557,7 +557,7 @@ public class HubUpdater {
     //
     // Write the string to a properties file
     //
-    private void writeToPropertiesFile(File defaultsFile, String stringToWrite) throws IOException {
+    public static void writeToPropertiesFile(File defaultsFile, String stringToWrite) throws IOException {
         if (defaultsFile == null) {
             return;
         }
@@ -571,7 +571,7 @@ public class HubUpdater {
     //
     // Register the specified changelog
     //
-    private void registerChangeLog(UUID hubProjectId, DatabaseChangeLog changeLog, String changeLogFile)
+    public static void registerChangeLog(UUID hubProjectId, DatabaseChangeLog changeLog, String changeLogFile)
             throws LiquibaseException {
         String apiKey = StringUtil.trimToNull(HubConfiguration.LIQUIBASE_HUB_API_KEY.getCurrentValue());
         if (apiKey == null) {

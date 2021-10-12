@@ -1,7 +1,6 @@
 package liquibase.command.core;
 
 import liquibase.Scope;
-import liquibase.changelog.ChangeLogParameters;
 import liquibase.changelog.ChangelogRewriter;
 import liquibase.changelog.DatabaseChangeLog;
 import liquibase.command.*;
@@ -14,9 +13,6 @@ import liquibase.hub.HubServiceFactory;
 import liquibase.hub.LiquibaseHubException;
 import liquibase.hub.model.HubChangeLog;
 import liquibase.hub.model.Project;
-import liquibase.parser.ChangeLogParser;
-import liquibase.parser.ChangeLogParserFactory;
-import liquibase.resource.ResourceAccessor;
 import liquibase.ui.UIService;
 import liquibase.util.StringUtil;
 
@@ -260,12 +256,5 @@ public class RegisterChangelogCommandStep extends AbstractCommandStep {
     @Override
     public void adjustCommandDefinition(CommandDefinition commandDefinition) {
         commandDefinition.setShortDescription("Register the changelog with a Liquibase Hub project");
-    }
-
-    private DatabaseChangeLog parseChangeLogFile(String changeLogFile) throws LiquibaseException {
-        ResourceAccessor resourceAccessor = Scope.getCurrentScope().getResourceAccessor();
-        ChangeLogParser parser = ChangeLogParserFactory.getInstance().getParser(changeLogFile, resourceAccessor);
-        ChangeLogParameters changeLogParameters = new ChangeLogParameters();
-        return parser.parse(changeLogFile, changeLogParameters, resourceAccessor);
     }
 }

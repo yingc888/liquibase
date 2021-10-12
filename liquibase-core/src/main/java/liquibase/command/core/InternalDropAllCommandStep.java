@@ -254,10 +254,4 @@ public class InternalDropAllCommandStep extends AbstractCommandStep {
         commandDefinition.setInternal(true);
     }
 
-    private DatabaseChangeLog parseChangeLogFile(String changeLogFile) throws LiquibaseException {
-        ResourceAccessor resourceAccessor = Scope.getCurrentScope().getResourceAccessor();
-        ChangeLogParser parser = ChangeLogParserFactory.getInstance().getParser(changeLogFile, resourceAccessor);
-        ChangeLogParameters changeLogParameters = new ChangeLogParameters();
-        return parser.parse(changeLogFile, changeLogParameters, resourceAccessor);
-    }
 }

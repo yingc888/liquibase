@@ -1,6 +1,13 @@
 package liquibase.command;
 
+import liquibase.Scope;
+import liquibase.changelog.ChangeLogParameters;
+import liquibase.changelog.DatabaseChangeLog;
 import liquibase.exception.CommandValidationException;
+import liquibase.exception.LiquibaseException;
+import liquibase.parser.ChangeLogParser;
+import liquibase.parser.ChangeLogParserFactory;
+import liquibase.resource.ResourceAccessor;
 import liquibase.util.StringUtil;
 
 import java.util.Arrays;
@@ -39,5 +46,18 @@ public abstract class AbstractCommandStep implements CommandStep {
     @Override
     public void adjustCommandDefinition(CommandDefinition commandDefinition) {
 
+    }
+
+    protected DatabaseChangeLog parseChangeLogFile(String changeLogFile) throws LiquibaseException {
+        return parseChangeLogFile(changeLogFile, null);
+    }
+
+    protected DatabaseChangeLog parseChangeLogFile(String changeLogFile, ChangeLogParameters changeLogParameters) throws LiquibaseException {
+        ResourceAccessor resourceAccessor = Scope.getCurrentScope().getResourceAccessor();
+        ChangeLogParser parser = ChangeLogParserFactory.getInstance().getParser(changeLogFile, resourceAccessor);
+        if (changeLogParameters == null) {
+            changeLogParameters = new ChangeLogParameters();
+        }
+        return parser.parse(changeLogFile, changeLogParameters, resourceAccessor);
     }
 }

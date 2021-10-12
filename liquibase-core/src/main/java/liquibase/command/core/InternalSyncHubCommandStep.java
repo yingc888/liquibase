@@ -1,7 +1,10 @@
 package liquibase.command.core;
 
 import liquibase.Scope;
-import liquibase.changelog.*;
+import liquibase.changelog.ChangeLogHistoryService;
+import liquibase.changelog.ChangeLogHistoryServiceFactory;
+import liquibase.changelog.DatabaseChangeLog;
+import liquibase.changelog.RanChangeSet;
 import liquibase.command.*;
 import liquibase.database.Database;
 import liquibase.exception.CommandExecutionException;
@@ -12,7 +15,6 @@ import liquibase.hub.LiquibaseHubException;
 import liquibase.hub.model.Connection;
 import liquibase.hub.model.HubChangeLog;
 import liquibase.hub.model.Project;
-import liquibase.parser.ChangeLogParserFactory;
 import liquibase.resource.ResourceAccessor;
 import liquibase.util.StringUtil;
 
@@ -87,9 +89,8 @@ public class InternalSyncHubCommandStep extends AbstractCommandStep {
         if (hubConnectionId == null) {
             Project project = null;
             if (StringUtil.isNotEmpty(commandScope.getArgumentValue(CHANGELOG_FILE_ARG))) {
-                final ResourceAccessor resourceAccessor = Scope.getCurrentScope().getResourceAccessor();
                 final String changelogFile = commandScope.getArgumentValue(CHANGELOG_FILE_ARG);
-                final DatabaseChangeLog databaseChangeLog = ChangeLogParserFactory.getInstance().getParser(changelogFile, resourceAccessor).parse(changelogFile, new ChangeLogParameters(), resourceAccessor);
+                final DatabaseChangeLog databaseChangeLog = parseChangeLogFile(changelogFile);
                 final String changeLogId = databaseChangeLog.getChangeLogId();
 
                 if (changeLogId == null) {
