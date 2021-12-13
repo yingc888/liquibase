@@ -4,9 +4,11 @@ import liquibase.Scope;
 import liquibase.configuration.*;
 import liquibase.configuration.core.InteractivePromptingValueProvider;
 import liquibase.exception.CommandExecutionException;
+import liquibase.ui.interactive.InteractivePromptResponseEnum;
 import liquibase.util.StringUtil;
 import org.apache.commons.lang3.StringUtils;
 
+import java.io.File;
 import java.io.OutputStream;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -80,6 +82,13 @@ public class CommandScope {
         this.argumentValues.put(argument.getName(), value);
 
         return this;
+    }
+
+    /**
+     * Get the value which corresponds to the given key directly out of the argument values map.
+     */
+    public Object getArgumentValue(String key) {
+        return this.argumentValues.get(key);
     }
 
 
@@ -172,6 +181,12 @@ public class CommandScope {
                                 }
                             }
                         }
+                        this.addArgumentValue(InteractivePromptResponseEnum.class.getSimpleName(), InteractivePromptResponseEnum.customize);
+                    } else if (StringUtils.containsIgnoreCase(response, "y")) {
+                        String message = String.format("Setting up new Liquibase project in '%s'...", new File("").getAbsolutePath());
+                        Scope.getCurrentScope().getLog(CommandScope.class).info(message);
+                        Scope.getCurrentScope().getUI().sendMessage(message);
+                        this.addArgumentValue(InteractivePromptResponseEnum.class.getSimpleName(), InteractivePromptResponseEnum.yes_with_defaults);
                     }
                 }
             }
