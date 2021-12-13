@@ -187,6 +187,12 @@ public class CommandScope {
                         Scope.getCurrentScope().getLog(CommandScope.class).info(message);
                         Scope.getCurrentScope().getUI().sendMessage(message);
                         this.addArgumentValue(InteractivePromptResponseEnum.class.getSimpleName(), InteractivePromptResponseEnum.yes_with_defaults);
+                    } else if (StringUtils.containsIgnoreCase(response, "n")) {
+                        String message = "No files created. Set 'liquibase.init.project.guide=off' in your defaults file or set LIQUIBASE_COMMAND_INIT_PROJECT_GUIDE=off as an environment variable to not be asked again. Getting Started and project setup available anytime, run \"liquibase init project --help\" for information.";
+                        Scope.getCurrentScope().getLog(CommandScope.class).info(message);
+                        Scope.getCurrentScope().getUI().sendMessage(message);
+                        this.addArgumentValue(InteractivePromptResponseEnum.class.getSimpleName(), InteractivePromptResponseEnum.no);
+                        return resultsBuilder.build();
                     }
                 }
             }
