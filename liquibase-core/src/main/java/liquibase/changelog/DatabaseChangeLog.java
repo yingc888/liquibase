@@ -629,7 +629,7 @@ public class DatabaseChangeLog implements Comparable<DatabaseChangeLog>, Conditi
         return changeSet;
     }
 
-    protected Comparator<String> getStandardChangeLogComparator() {
+    public Comparator<String> getStandardChangeLogComparator() {
         return new Comparator<String>() {
             @Override
             public int compare(String o1, String o2) {

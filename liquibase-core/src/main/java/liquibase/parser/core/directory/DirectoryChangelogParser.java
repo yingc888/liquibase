@@ -6,6 +6,7 @@ import liquibase.changelog.ChangeSet;
 import liquibase.changelog.DatabaseChangeLog;
 import liquibase.database.ObjectQuotingStrategy;
 import liquibase.exception.ChangeLogParseException;
+import liquibase.exception.SetupException;
 import liquibase.parser.ChangeLogParser;
 import liquibase.resource.ResourceAccessor;
 import liquibase.util.FileUtil;
@@ -20,18 +21,10 @@ public class DirectoryChangelogParser implements ChangeLogParser {
     @Override
     public DatabaseChangeLog parse(String physicalChangeLogLocation, ChangeLogParameters changeLogParameters, ResourceAccessor resourceAccessor) throws ChangeLogParseException {
         DatabaseChangeLog databaseChangeLog = new DatabaseChangeLog();
-        File currentDir = new File(physicalChangeLogLocation);
-        File[] files = currentDir.listFiles();
-        for (File file : Objects.requireNonNull(files)) {
-            if (getExtension(file.getName()).equalsIgnoreCase("sql")) {
-                ChangeSet changeSet = new ChangeSet(file.getName(), "author", false, false, file.getName(), "", null, databaseChangeLog);
-                try {
-                    changeSet.addChange(new RawSQLChange(FileUtil.getContents(file)));
-                } catch (IOException e) {
-                    System.out.println("Failed to add raw SQL change " + file.getName());
-                }
-                databaseChangeLog.addChangeSet(changeSet);
-            }
+        try {
+            databaseChangeLog.includeAll(physicalChangeLogLocation, false, null, true, databaseChangeLog.getStandardChangeLogComparator(), resourceAccessor, null, null, false);
+        } catch (SetupException e) {
+            System.out.println(e);
         }
         return databaseChangeLog;
     }
