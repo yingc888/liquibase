@@ -3,3 +3,4 @@ liquibase.parser.core.json.JsonChangeLogParser
 liquibase.parser.core.sql.SqlChangeLogParser
 liquibase.parser.core.xml.XMLChangeLogSAXParser
 liquibase.parser.core.yaml.YamlChangeLogParser
+liquibase.parser.core.directory.DirectoryChangelogParser
