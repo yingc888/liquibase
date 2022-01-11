@@ -598,8 +598,9 @@ public class Main {
      * @return true if a ChangeLog is required, false if not.
      */
     private static boolean isChangeLogRequired(String command) {
-        return command.toLowerCase().startsWith(COMMANDS.UPDATE)
-                || (command.toLowerCase().startsWith(COMMANDS.ROLLBACK) &&
+        return //command.toLowerCase().startsWith(COMMANDS.UPDATE)
+                //||
+                (command.toLowerCase().startsWith(COMMANDS.ROLLBACK) &&
                 (!command.equalsIgnoreCase(COMMANDS.ROLLBACK_ONE_CHANGE_SET) &&
                         !command.equalsIgnoreCase(COMMANDS.ROLLBACK_ONE_UPDATE)))
                 || COMMANDS.REGISTER_CHANGELOG.equalsIgnoreCase(command)

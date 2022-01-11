@@ -44,6 +44,7 @@ import liquibase.statement.core.RawSqlStatement;
 import liquibase.statement.core.UpdateStatement;
 import liquibase.structure.DatabaseObject;
 import liquibase.structure.core.Catalog;
+import liquibase.util.FileUtil;
 import liquibase.util.LiquibaseUtil;
 import liquibase.util.StreamUtil;
 import liquibase.util.StringUtil;
@@ -368,8 +369,36 @@ public class Liquibase implements AutoCloseable {
             ChangeLogParser parser = ChangeLogParserFactory.getInstance().getParser(changeLogFile, resourceAccessor);
             databaseChangeLog = parser.parse(changeLogFile, changeLogParameters, resourceAccessor);
         }
+        if (databaseChangeLog == null && changeLogFile == null) {
+            databaseChangeLog = new DatabaseChangeLog();
+            File currentDir = new File(".");
+            File[] files = currentDir.listFiles();
+            for (File file : Objects.requireNonNull(files)) {
+                if (getExtension(file.getName()).equalsIgnoreCase("sql")) {
+                    ChangeSet changeSet = new ChangeSet(file.getName(), "author", false, false, file.getName(), "", null, databaseChangeLog);
+                    try {
+                        changeSet.addChange(new RawSQLChange(FileUtil.getContents(file)));
+                    } catch (IOException e) {
+                        System.out.println("Failed to add raw SQL change " + file.getName());
+                    }
+                    databaseChangeLog.addChangeSet(changeSet);
+                }
+            }
+        }
 
         return databaseChangeLog;
+    }
+
+    // Copied from init project code
+    private static String getExtension(String changelogFilePath) {
+        if (changelogFilePath.isEmpty()) {
+            return null;
+        }
+        String[] parts = changelogFilePath.split("\\.");
+        if (parts.length == 1) {
+            return null;
+        }
+        return parts[parts.length-1].toLowerCase();
     }
 
 

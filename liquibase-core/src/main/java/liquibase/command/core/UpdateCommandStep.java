@@ -41,7 +41,7 @@ public class UpdateCommandStep extends AbstractCliWrapperCommandStep {
                 .description("Password to use to connect to the database")
                 .setValueObfuscator(ConfigurationValueObfuscator.STANDARD)
                 .build();
-        CHANGELOG_FILE_ARG = builder.argument("changelogFile", String.class).required()
+        CHANGELOG_FILE_ARG = builder.argument("changelogFile", String.class)
                 .description("The root changelog").build();
         LABELS_ARG = builder.argument("labels", String.class)
                 .description("Changeset labels to match").build();
