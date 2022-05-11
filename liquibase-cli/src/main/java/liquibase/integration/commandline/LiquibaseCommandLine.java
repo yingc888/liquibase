@@ -926,6 +926,8 @@ public class LiquibaseCommandLine {
                     optionBuilder.arity("1");
                 }
 
+                optionBuilder.hidden(def.isHidden());
+
                 //only show the first/standard variation of a name
                 if (i > 0) {
                     optionBuilder.hidden(true);

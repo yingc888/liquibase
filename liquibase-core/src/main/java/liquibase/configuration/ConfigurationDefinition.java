@@ -38,6 +38,7 @@ public class ConfigurationDefinition<DataType> implements Comparable<Configurati
     private static final Pattern ALLOWED_KEY_PATTERN = Pattern.compile("[a-zA-Z0-9._]+");
 
     private boolean loggedUsingDefault = false;
+    private boolean hidden;
 
     /**
      * Constructor private to force {@link Builder} usage
@@ -186,6 +187,13 @@ public class ConfigurationDefinition<DataType> implements Comparable<Configurati
         return internal;
     }
 
+    /**
+     * Hidden arguments are ones that can be called via integrations, but should not be normally shown in help to users.
+     */
+    public boolean isHidden() {
+        return hidden;
+    }
+
     @Override
     public int compareTo(ConfigurationDefinition o) {
         return this.getKey().compareTo(o.getKey());
@@ -311,6 +319,12 @@ public class ConfigurationDefinition<DataType> implements Comparable<Configurati
 
         public Building<DataType> setInternal(boolean internal) {
             definition.internal = internal;
+
+            return this;
+        }
+
+        public Building<DataType> hidden() {
+            definition.hidden = true;
 
             return this;
         }
