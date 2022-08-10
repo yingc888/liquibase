@@ -1755,6 +1755,7 @@ public class Main {
                 loadChangeSetInfoToMap(argsMap);
                 CommandScope liquibaseCommand = createLiquibaseCommand(database, liquibase, "internalUpdateOneChangeSet", argsMap);
                 liquibaseCommand.execute();
+                return;
             } else if (COMMANDS.DEACTIVATE_CHANGELOG.equalsIgnoreCase(command)) {
                 Map<String, Object> argsMap = new HashMap<>();
                 CommandScope liquibaseCommand = createLiquibaseCommand(database, liquibase, COMMANDS.DEACTIVATE_CHANGELOG, argsMap);
