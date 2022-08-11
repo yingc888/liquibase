@@ -567,8 +567,7 @@ public class Main {
                 || COMMANDS.ROLLBACK_COUNT.equalsIgnoreCase(command)
                 || COMMANDS.ROLLBACK_ONE_CHANGE_SET.equalsIgnoreCase(command)
                 || COMMANDS.ROLLBACK_ONE_UPDATE.equalsIgnoreCase(command)
-                || COMMANDS.DROP_ALL.equalsIgnoreCase(command)
-                || COMMANDS.UPDATE_ONE_CHANGESET.equalsIgnoreCase(command);
+                || COMMANDS.DROP_ALL.equalsIgnoreCase(command);
     }
 
     /**
@@ -677,8 +676,7 @@ public class Main {
                 || COMMANDS.ROLLBACK_ONE_CHANGE_SET.equalsIgnoreCase(arg)
                 || COMMANDS.ROLLBACK_ONE_CHANGE_SET_SQL.equalsIgnoreCase(arg)
                 || COMMANDS.ROLLBACK_ONE_UPDATE.equalsIgnoreCase(arg)
-                || COMMANDS.ROLLBACK_ONE_UPDATE_SQL.equalsIgnoreCase(arg)
-                || COMMANDS.UPDATE_ONE_CHANGESET.equalsIgnoreCase(arg);
+                || COMMANDS.ROLLBACK_ONE_UPDATE_SQL.equalsIgnoreCase(arg);
     }
 
     /**
@@ -1750,12 +1748,6 @@ public class Main {
                 CommandScope liquibaseCommand = createLiquibaseCommand(database, liquibase, "internalRollbackOneUpdateSQL", argsMap);
                 liquibaseCommand.execute();
                 return;
-            } else if (COMMANDS.UPDATE_ONE_CHANGESET.equalsIgnoreCase(command)) {
-                Map<String, Object> argsMap = new HashMap<>();
-                loadChangeSetInfoToMap(argsMap);
-                CommandScope liquibaseCommand = createLiquibaseCommand(database, liquibase, "internalUpdateOneChangeSet", argsMap);
-                liquibaseCommand.execute();
-                return;
             } else if (COMMANDS.DEACTIVATE_CHANGELOG.equalsIgnoreCase(command)) {
                 Map<String, Object> argsMap = new HashMap<>();
                 CommandScope liquibaseCommand = createLiquibaseCommand(database, liquibase, COMMANDS.DEACTIVATE_CHANGELOG, argsMap);
@@ -2241,7 +2233,6 @@ public class Main {
         private static final String ROLLBACK_ONE_CHANGE_SET_SQL = "rollbackOneChangeSetSQL";
         private static final String ROLLBACK_ONE_UPDATE = "rollbackOneUpdate";
         private static final String ROLLBACK_ONE_UPDATE_SQL = "rollbackOneUpdateSQL";
-        private static final String UPDATE_ONE_CHANGESET = "updateOneChangeSet";
         private static final String REGISTER_CHANGELOG = "registerChangeLog";
         private static final String DEACTIVATE_CHANGELOG = "deactivateChangeLog";
         private static final String FORMATTED_DIFF = "formattedDiff";
