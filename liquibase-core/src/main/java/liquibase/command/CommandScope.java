@@ -4,6 +4,7 @@ import liquibase.Scope;
 import liquibase.configuration.*;
 import liquibase.exception.CommandExecutionException;
 import liquibase.exception.CommandValidationException;
+import liquibase.servicelocator.ServiceLocator;
 import liquibase.util.StringUtil;
 
 import java.io.FilterOutputStream;
@@ -167,12 +168,20 @@ public class CommandScope {
     public CommandResults execute() throws CommandExecutionException {
         CommandResultsBuilder resultsBuilder = new CommandResultsBuilder(this, outputStream);
         final List<CommandStep> pipeline = commandDefinition.getPipeline();
-        validate();
+        try {
+            validate();
+        } catch (CommandValidationException cve) {
+            captureExceptionInPreProcessor(cve);
+            throw cve;
+        }
         try {
             for (CommandStep command : pipeline) {
+                runPreprocessors(command, resultsBuilder);
                 command.run(resultsBuilder);
+                runPostprocessors(command);
             }
         } catch (Exception e) {
+            captureExceptionInPostProcessor(e);
             if (e instanceof CommandExecutionException) {
                 throw (CommandExecutionException) e;
             } else {
@@ -188,7 +197,26 @@ public class CommandScope {
             }
         }
 
+        outputPostProcessorYamlHook();
+
         return resultsBuilder.build();
+    }
+
+    // todo - this should probably use getPlugin, not the service locator (because I only want one preprocessor to run)
+    private void runPreprocessors(CommandStep command, CommandResultsBuilder resultsBuilder) {
+        ServiceLocator serviceLocator = Scope.getCurrentScope().getServiceLocator();
+        List<CommandPreprocessor> preprocessors = serviceLocator.findInstances(CommandPreprocessor.class);
+        for (CommandPreprocessor preprocessor : preprocessors) {
+            preprocessor.before(command, resultsBuilder);
+        }
+    }
+
+    private void runPostprocessors(CommandStep command) {
+        ServiceLocator serviceLocator = Scope.getCurrentScope().getServiceLocator();
+        List<CommandPostprocessor> postprocessors = serviceLocator.findInstances(CommandPostprocessor.class);
+        for (CommandPostprocessor postprocessor : postprocessors) {
+            postprocessor.after(command);
+        }
     }
 
     private <T> ConfigurationDefinition<T> createConfigurationDefinition(CommandArgumentDefinition<T> argument, boolean includeCommandName) {
