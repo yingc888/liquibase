@@ -13,13 +13,11 @@ import java.util.TreeMap;
  */
 public class CommandResultsBuilder {
 
-    private final OutputStream outputStream;
     private final SortedMap<String, Object> resultValues = new TreeMap<>();
     private final CommandScope commandScope;
 
 
-    CommandResultsBuilder(CommandScope commandScope, OutputStream outputStream) {
-        this.outputStream = outputStream;
+    CommandResultsBuilder(CommandScope commandScope) {
         this.commandScope = commandScope;
     }
 
@@ -36,7 +34,7 @@ public class CommandResultsBuilder {
      * @see CommandScope#setOutput(OutputStream)
      */
     public OutputStream getOutputStream() {
-        return outputStream;
+        return commandScope.getOutputStream();
     }
 
     /**
@@ -69,8 +67,8 @@ public class CommandResultsBuilder {
      */
     CommandResults build() {
         try {
-            if (this.outputStream != null) {
-                outputStream.flush();
+            if (this.getOutputStream() != null) {
+                getOutputStream().flush();
             }
         } catch (Exception e) {
             Scope.getCurrentScope().getLog(getClass()).warning("Error flushing " + StringUtil.join(commandScope.getCommand().getName(), " ") + " output: " + e.getMessage(), e);

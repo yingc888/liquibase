@@ -8,7 +8,9 @@ class CommandResultsBuilderTest extends Specification {
     def "builder works"() {
         setup:
         def outputStream = new ByteArrayOutputStream()
-        def builder = new CommandResultsBuilder(new CommandScope("history"), outputStream)
+        def scope = new CommandScope("history")
+        scope.setOutput(outputStream)
+        def builder = new CommandResultsBuilder(scope)
 
         when:
         builder.getOutputStream().write("getOutputStream output".bytes)
