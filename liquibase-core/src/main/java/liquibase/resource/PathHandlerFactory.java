@@ -90,6 +90,16 @@ public class PathHandlerFactory extends AbstractPluginFactory<PathHandler> {
         }
     }
 
+    public List<Resource> search(String resourcePath) throws IOException {
+        final PathHandler plugin = getPlugin(resourcePath);
+
+        if (plugin == null) {
+            throw new IOException("Cannot parse resource location: '" + resourcePath + "'");
+        }
+
+        return plugin.search(resourcePath);
+    }
+
     /**
      * Returns the outputStream from {@link #getResource(String, boolean)} if it exists, and the outputStream from {@link #createResource(String)} if it does not.
      *

@@ -5,6 +5,7 @@ import liquibase.plugin.Plugin;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.List;
 
 /**
  * Interface for extensions that can translate path strings into {@link ResourceAccessor}s and {@link java.io.InputStream}s.
@@ -49,4 +50,6 @@ public interface PathHandler extends Plugin {
      *
      */
     boolean isAbsolute(String path) throws IOException;
+
+    List<Resource> search(String resourcePath) throws IOException;
 }
