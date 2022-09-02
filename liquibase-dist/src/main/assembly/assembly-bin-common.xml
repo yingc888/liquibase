@@ -130,7 +130,7 @@
                 <exclude>com.sun.activation:jakarta.activation:jar:</exclude> <!-- from jaxb-runtime -->
                 <exclude>javax.activation:javax.activation-api:jar:</exclude> <!-- from jaxb-api -->
 				<exclude>org.liquibase:liquibase-snowflake:jar:</exclude> <!-- from liquibase-commercial -->
-				<exclude>net.java.truelicense:*:jar:</exclude> <!-- from liquibase-commercial -->
+				<exclude>global.namespace.truelicense:*:jar:</exclude> <!-- from liquibase-commercial -->
 				<exclude>com.github.jsqlparser:jsqlparser:jar:</exclude> <!-- from liquibase-commercial -->
 				<exclude>commons-codec:commons-codec:jar:</exclude> <!-- from liquibase-commercial -->
 				<exclude>com.fasterxml.jackson.core:*:jar:</exclude> <!-- from liquibase-commercial -->
