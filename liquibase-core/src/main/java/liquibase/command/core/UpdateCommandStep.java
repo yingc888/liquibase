@@ -2,12 +2,13 @@ package liquibase.command.core;
 
 import liquibase.*;
 import liquibase.changelog.*;
+import liquibase.changelog.filter.*;
 import liquibase.changelog.visitor.*;
 import liquibase.command.*;
 import liquibase.command.core.helpers.FastCheck;
 import liquibase.command.core.helpers.HubHandler;
-import liquibase.command.core.helpers.UpdateHandler;
 import liquibase.database.Database;
+import liquibase.exception.DatabaseException;
 import liquibase.exception.LockException;
 import liquibase.executor.ExecutorService;
 import liquibase.integration.commandline.ChangeExecListenerUtils;
@@ -38,7 +39,6 @@ public class UpdateCommandStep extends AbstractCommandStep implements CleanUpCom
     public static final CommandArgumentDefinition<String> CHANGE_EXEC_LISTENER_PROPERTIES_FILE_ARG;
     public static final CommandArgumentDefinition<ChangeExecListener> CHANGE_EXEC_LISTENER_ARG;
     public static final CommandArgumentDefinition<UpdateSummaryEnum> SHOW_SUMMARY;
-    public static final CommandArgumentDefinition<ChangeLogParameters> CHANGELOG_PARAMETERS;
 
     static {
         CommandBuilder builder = new CommandBuilder(COMMAND_NAME, LEGACY_COMMAND_NAME);
@@ -59,9 +59,6 @@ public class UpdateCommandStep extends AbstractCommandStep implements CleanUpCom
                 .description("Path to a properties file for the ChangeExecListenerClass")
                 .build();
         CHANGE_EXEC_LISTENER_ARG = builder.argument("changeExecListener", ChangeExecListener.class)
-                .hidden()
-                .build();
-        CHANGELOG_PARAMETERS = builder.argument("changelogParameters", ChangeLogParameters.class)
                 .hidden()
                 .build();
         SHOW_SUMMARY = builder.argument("showSummary", UpdateSummaryEnum.class).description("Type of update results summary to show.  Values can be 'off', 'summary', or 'verbose'.")
@@ -101,23 +98,19 @@ public class UpdateCommandStep extends AbstractCommandStep implements CleanUpCom
 
     @Override
     public List<Class<?>> requiredDependencies() {
-        return Arrays.asList(Database.class, LockService.class);
+        return Arrays.asList(Database.class, LockService.class, DatabaseChangeLog.class, ChangeLogParameters.class);
     }
 
     @Override
     public void run(CommandResultsBuilder resultsBuilder) throws Exception {
         Scope.getCurrentScope().addMdcValue(MdcKey.LIQUIBASE_OPERATION, COMMAND_NAME[0]);
+        Scope.getCurrentScope().addMdcValue(MdcKey.LIQUIBASE_COMMAND_NAME, COMMAND_NAME[0]);
         CommandScope commandScope = resultsBuilder.getCommandScope();
         String changeLogFile = commandScope.getArgumentValue(CHANGELOG_FILE_ARG);
         Database database = (Database) commandScope.getDependency(Database.class);
         Contexts contexts = new Contexts(commandScope.getArgumentValue(CONTEXTS_ARG));
         LabelExpression labelExpression = new LabelExpression(commandScope.getArgumentValue(LABEL_FILTER_ARG));
-        ChangeLogParameters changeLogParameters = commandScope.getArgumentValue(CHANGELOG_PARAMETERS);
-        if (changeLogParameters == null) {
-            changeLogParameters = new ChangeLogParameters(database);
-        }
-        changeLogParameters.setContexts(contexts);
-        changeLogParameters.setLabels(labelExpression);
+        ChangeLogParameters changeLogParameters = (ChangeLogParameters) commandScope.getDependency(ChangeLogParameters.class);
         addCommandFiltersMdc(labelExpression, contexts);
 
         LockService lockService = (LockService) commandScope.getDependency(LockService.class);
@@ -125,18 +118,14 @@ public class UpdateCommandStep extends AbstractCommandStep implements CleanUpCom
         HubHandler hubHandler = null;
         DefaultChangeExecListener defaultChangeExecListener = new DefaultChangeExecListener();
         try {
-            DatabaseChangeLog databaseChangeLog = UpdateHandler.getDatabaseChangeLog(changeLogFile, changeLogParameters, false);
+            DatabaseChangeLog databaseChangeLog = (DatabaseChangeLog) commandScope.getDependency(DatabaseChangeLog.class);
             FastCheck fastCheck = new FastCheck();
             if (fastCheck.isUpToDate(database, databaseChangeLog, contexts, labelExpression)) {
                 return;
             }
-            UpdateHandler.checkLiquibaseTables(database, true, databaseChangeLog, contexts, labelExpression);
             ChangeLogHistoryService changelogService = ChangeLogHistoryServiceFactory.getInstance().getChangeLogService(database);
-            changelogService.generateDeploymentId();
             Scope.getCurrentScope().addMdcValue(MdcKey.DEPLOYMENT_ID, changelogService.getDeploymentId());
             Scope.getCurrentScope().getLog(getClass()).info(String.format("Using deploymentId: %s", changelogService.getDeploymentId()));
-
-            databaseChangeLog.validate(database, contexts, labelExpression);
 
             //Set up a "chain" of ChangeExecListeners. Starting with the custom change exec listener
             //then wrapping that in the DefaultChangeExecListener.
@@ -147,15 +136,15 @@ public class UpdateCommandStep extends AbstractCommandStep implements CleanUpCom
             defaultChangeExecListener.addListener(listener);
             hubHandler = new HubHandler(database, databaseChangeLog, changeLogFile, defaultChangeExecListener);
 
-            ChangeLogIterator changeLogIterator = UpdateHandler.getStandardChangelogIterator(database, contexts, labelExpression, databaseChangeLog);
+            ChangeLogIterator changeLogIterator = getStandardChangelogIterator(database, contexts, labelExpression, databaseChangeLog);
             StatusVisitor statusVisitor = new StatusVisitor(database);
-            ChangeLogIterator shouldRunIterator = UpdateHandler.getStatusChangelogIterator(database, contexts, labelExpression, databaseChangeLog);
+            ChangeLogIterator shouldRunIterator = getStatusChangelogIterator(database, contexts, labelExpression, databaseChangeLog);
             shouldRunIterator.run(statusVisitor, new RuntimeEnvironment(database, contexts, labelExpression));
 
             //Remember we built our hubHandler with our DefaultChangeExecListener so this HubChangeExecListener is delegating to them.
             ChangeExecListener hubChangeExecListener = hubHandler.startHubForUpdate(changeLogParameters, changeLogIterator);
             resultsBuilder.addResult(DEFAULT_CHANGE_EXEC_LISTENER_RESULT_KEY, defaultChangeExecListener);
-            ChangeLogIterator runChangeLogIterator = UpdateHandler.getStandardChangelogIterator(database, contexts, labelExpression, databaseChangeLog);
+            ChangeLogIterator runChangeLogIterator = getStandardChangelogIterator(database, contexts, labelExpression, databaseChangeLog);
             CompositeLogService compositeLogService = new CompositeLogService(true, bufferLog);
             HashMap<String, Object> scopeValues = new HashMap<>();
             scopeValues.put(Scope.Attr.logService.name(), compositeLogService);
@@ -178,6 +167,8 @@ public class UpdateCommandStep extends AbstractCommandStep implements CleanUpCom
             }
             throw e;
         } finally {
+            //TODO: We should be able to remove this once we get the rest of the update family
+            // set up with the CommandFramework
             try {
                 lockService.releaseLock();
             } catch (LockException e) {
@@ -187,13 +178,10 @@ public class UpdateCommandStep extends AbstractCommandStep implements CleanUpCom
     }
 
     @Override
-    public void cleanUp(CommandResultsBuilder resultsBuilder) throws Exception {
+    public void cleanUp(CommandResultsBuilder resultsBuilder) {
         LockServiceFactory.getInstance().resetAll();
         ChangeLogHistoryServiceFactory.getInstance().resetAll();
         Scope.getCurrentScope().getSingleton(ExecutorService.class).reset();
-        if (resultsBuilder.getCommandScope().getDependency(Exception.class) != null) {
-            throw (Exception) resultsBuilder.getCommandScope().getDependency(Exception.class);
-        }
     }
 
     private void addCommandFiltersMdc(LabelExpression labelExpression, Contexts contexts) {
@@ -211,5 +199,25 @@ public class UpdateCommandStep extends AbstractCommandStep implements CleanUpCom
              MdcObject deploymentOutcomeCountMdc = Scope.getCurrentScope().addMdcValue(MdcKey.DEPLOYMENT_OUTCOME_COUNT, String.valueOf(deployedChangeSetCount))) {
             Scope.getCurrentScope().getLog(getClass()).info(success ? successLog : failureLog);
         }
+    }
+
+    @Beta
+    public static ChangeLogIterator getStandardChangelogIterator(Database database, Contexts contexts, LabelExpression labelExpression, DatabaseChangeLog changeLog) throws DatabaseException {
+        return new ChangeLogIterator(changeLog,
+                new ShouldRunChangeSetFilter(database),
+                new ContextChangeSetFilter(contexts),
+                new LabelChangeSetFilter(labelExpression),
+                new DbmsChangeSetFilter(database),
+                new IgnoreChangeSetFilter());
+    }
+
+    @Beta
+    public static ChangeLogIterator getStatusChangelogIterator(Database database, Contexts contexts, LabelExpression labelExpression, DatabaseChangeLog changeLog) throws DatabaseException {
+        return new StatusChangeLogIterator(changeLog,
+                new ShouldRunChangeSetFilter(database),
+                new ContextChangeSetFilter(contexts),
+                new LabelChangeSetFilter(labelExpression),
+                new DbmsChangeSetFilter(database),
+                new IgnoreChangeSetFilter());
     }
 }
