@@ -218,7 +218,7 @@ public class ColumnSnapshotGenerator extends JdbcSnapshotGenerator {
                 (column.getRelation() != null) && (column.getSchema() != null)) {
 
             Column.AutoIncrementInformation autoIncrementInformation =
-                    this.columnAutoIncrementService.obtainSequencesInformation(database, snapshot)
+                    this.columnAutoIncrementService.obtainSequencesInformation(database, column.getSchema(), snapshot)
                             .get(String.format("%s.%s.%s", column.getSchema().getName(), column.getRelation().getName(), column.getName()));
             if (autoIncrementInformation != null) {
                 column.setAutoIncrementInformation(autoIncrementInformation);
@@ -477,9 +477,9 @@ public class ColumnSnapshotGenerator extends JdbcSnapshotGenerator {
          */
         int jdbcType = columnMetadataResultSet.getInt("DATA_TYPE");
 
-        // Java 8 compatibility notes: When upgrading this project to JDK8 and beyond, also execute this if-branch
-        // if jdbcType is TIMESTAMP_WITH_TIMEZONE (does not exist yet in JDK7)
-        if (jdbcType == Types.TIMESTAMP) {
+        if (jdbcType == Types.TIMESTAMP || jdbcType == Types.TIMESTAMP_WITH_TIMEZONE
+            // SQL Anywhere incorrectly reports type VARCHAR for TIMESTAMP_WITZH_TIMEZONE columns
+            || (database instanceof SybaseASADatabase && "timestamp with time zone".equalsIgnoreCase(columnTypeName))) {
 
             if (decimalDigits == null) {
                 type.setColumnSize(null);

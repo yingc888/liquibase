@@ -17,7 +17,7 @@ Optional Args:
     Default: null
   changeExecListenerPropertiesFile (String) Path to a properties file for the ChangeExecListenerClass
     Default: null
-  contexts (String) Changeset contexts to match
+  contextFilter (String) Changeset contexts to match
     Default: null
   defaultCatalogName (String) The default catalog name to use for the database connection
     Default: null
@@ -62,7 +62,7 @@ Optional Args:
                 changelogFile: "changelogs/h2/complete/summary-changelog.xml",
                 tag: "updateTag",
                 labelFilter: "testtable1,tagit",
-                contexts: "none,tagit",
+                contextFilter: "none,tagit",
                 showSummary: "summary"
         ]
 
@@ -83,7 +83,7 @@ Optional Args:
                                  "FILTERED CHANGE SETS SUMMARY",
                                  "Context mismatch:             1",
                                  "Label mismatch:               2",
-                                 "After tag:                    1",
+                                 "After tag:                    2",
                                  "DBMS mismatch:                1"
                                 ]
         ]
@@ -133,6 +133,21 @@ Optional Args:
                 changelogFile: "changelogs/h2/complete/simple.tag.changelog.xml",
         ]
         expectedException = CommandValidationException.class
+    }
+
+    run "Run with a bogus tag shows a warning", {
+        arguments = [
+                url:        { it.url },
+                username:   { it.username },
+                password:   { it.password },
+                tag          : "blablabla",
+                changelogFile: "changelogs/h2/complete/simple.tag.changelog.xml",
+        ]
+        expectedUI =
+"""
+WARNING:  The tag 'blablabla' was not found in the changelog 'changelogs/h2/complete/simple.tag.changelog.xml'. All changesets in the changelog were deployed.
+Learn about options for undoing these changes at https://docs.liquibase.com.
+"""
     }
 
     run "Run without a changeLogFile throws an exception", {
