@@ -11,6 +11,9 @@ import java.util.logging.Handler;
 
 public class JavaLogService extends AbstractLogService {
 
+    /*
+    test
+     */
     @Override
     public int getPriority() {
         return PRIORITY_DEFAULT;
