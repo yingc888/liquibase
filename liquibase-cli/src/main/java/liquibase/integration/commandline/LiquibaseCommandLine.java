@@ -24,6 +24,7 @@ import liquibase.logging.mdc.MdcKey;
 import liquibase.logging.mdc.MdcManager;
 import liquibase.logging.mdc.MdcObject;
 import liquibase.logging.mdc.customobjects.Version;
+import liquibase.plugin.StartupListener;
 import liquibase.resource.*;
 import liquibase.ui.CompositeUIService;
 import liquibase.ui.ConsoleUIService;
@@ -354,7 +355,10 @@ public class LiquibaseCommandLine {
             return Scope.child(Collections.singletonMap(Scope.Attr.logService.name(), newLogService), () -> {
                 try {
                     return Scope.child(configureScope(), () -> {
-
+                        List<StartupListener> instances = Scope.getCurrentScope().getServiceLocator().findInstances(StartupListener.class);
+                        for (StartupListener instance : instances) {
+                            instance.onStartup();
+                        }
                         if (!LiquibaseCommandLineConfiguration.SHOULD_RUN.getCurrentValue()) {
                             Scope.getCurrentScope().getUI().sendErrorMessage((
                                     String.format(coreBundle.getString("did.not.run.because.param.was.set.to.false"),
