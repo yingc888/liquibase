@@ -7,7 +7,6 @@ import liquibase.database.core.*;
 import liquibase.datatype.DataTypeInfo;
 import liquibase.datatype.DatabaseDataType;
 import liquibase.datatype.LiquibaseDataType;
-import liquibase.exception.DatabaseException;
 import liquibase.statement.DatabaseFunction;
 
 import java.util.Locale;
@@ -63,7 +62,7 @@ public class IntType extends LiquibaseDataType {
             return type;
         }
         if ((database instanceof HsqlDatabase) || (database instanceof FirebirdDatabase) || (database instanceof
-            InformixDatabase)) {
+            InformixDatabase) || (database instanceof DMDatabase)) {
             return new DatabaseDataType("INT");
         }
         if (database instanceof SQLiteDatabase) {

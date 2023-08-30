@@ -61,7 +61,7 @@ public class JdbcDatabaseSnapshot extends DatabaseSnapshot {
             this.database = database;
         }
 
-        public java.sql.DatabaseMetaData getDatabaseMetaData() {
+        public DatabaseMetaData getDatabaseMetaData() {
             return databaseMetaData;
         }
 
@@ -504,39 +504,39 @@ public class JdbcDatabaseSnapshot extends DatabaseSnapshot {
                         "dc.definition as COLUMN_DEF, " +
                         // data type mapping from https://msdn.microsoft.com/en-us/library/ms378878(v=sql.110).aspx
                         "CASE t.name " +
-                        "WHEN 'bigint' THEN " + java.sql.Types.BIGINT + " " +
-                        "WHEN 'binary' THEN " + java.sql.Types.BINARY + " " +
-                        "WHEN 'bit' THEN " + java.sql.Types.BIT + " " +
-                        "WHEN 'char' THEN " + java.sql.Types.CHAR + " " +
-                        "WHEN 'date' THEN " + java.sql.Types.DATE + " " +
-                        "WHEN 'datetime' THEN " + java.sql.Types.TIMESTAMP + " " +
-                        "WHEN 'datetime2' THEN " + java.sql.Types.TIMESTAMP + " " +
+                        "WHEN 'bigint' THEN " + Types.BIGINT + " " +
+                        "WHEN 'binary' THEN " + Types.BINARY + " " +
+                        "WHEN 'bit' THEN " + Types.BIT + " " +
+                        "WHEN 'char' THEN " + Types.CHAR + " " +
+                        "WHEN 'date' THEN " + Types.DATE + " " +
+                        "WHEN 'datetime' THEN " + Types.TIMESTAMP + " " +
+                        "WHEN 'datetime2' THEN " + Types.TIMESTAMP + " " +
                         "WHEN 'datetimeoffset' THEN -155 " +
-                        "WHEN 'decimal' THEN " + java.sql.Types.DECIMAL + " " +
-                        "WHEN 'float' THEN " + java.sql.Types.DOUBLE + " " +
-                        "WHEN 'image' THEN " + java.sql.Types.LONGVARBINARY + " " +
-                        "WHEN 'int' THEN " + java.sql.Types.INTEGER + " " +
-                        "WHEN 'money' THEN " + java.sql.Types.DECIMAL + " " +
-                        "WHEN 'nchar' THEN " + java.sql.Types.NCHAR + " " +
-                        "WHEN 'ntext' THEN " + java.sql.Types.LONGNVARCHAR + " " +
-                        "WHEN 'numeric' THEN " + java.sql.Types.NUMERIC + " " +
-                        "WHEN 'nvarchar' THEN " + java.sql.Types.NVARCHAR + " " +
+                        "WHEN 'decimal' THEN " + Types.DECIMAL + " " +
+                        "WHEN 'float' THEN " + Types.DOUBLE + " " +
+                        "WHEN 'image' THEN " + Types.LONGVARBINARY + " " +
+                        "WHEN 'int' THEN " + Types.INTEGER + " " +
+                        "WHEN 'money' THEN " + Types.DECIMAL + " " +
+                        "WHEN 'nchar' THEN " + Types.NCHAR + " " +
+                        "WHEN 'ntext' THEN " + Types.LONGNVARCHAR + " " +
+                        "WHEN 'numeric' THEN " + Types.NUMERIC + " " +
+                        "WHEN 'nvarchar' THEN " + Types.NVARCHAR + " " +
                         "WHEN 'real' THEN " + Types.REAL + " " +
-                        "WHEN 'smalldatetime' THEN " + java.sql.Types.TIMESTAMP + " " +
-                        "WHEN 'smallint' THEN " + java.sql.Types.SMALLINT + " " +
-                        "WHEN 'smallmoney' THEN " + java.sql.Types.DECIMAL + " " +
-                        "WHEN 'text' THEN " + java.sql.Types.LONGVARCHAR + " " +
-                        "WHEN 'time' THEN " + java.sql.Types.TIME + " " +
-                        "WHEN 'timestamp' THEN " + java.sql.Types.BINARY + " " +
-                        "WHEN 'tinyint' THEN " + java.sql.Types.TINYINT + " " +
-                        "WHEN 'udt' THEN " + java.sql.Types.VARBINARY + " " +
-                        "WHEN 'uniqueidentifier' THEN " + java.sql.Types.CHAR + " " +
-                        "WHEN 'varbinary' THEN " + java.sql.Types.VARBINARY + " " +
-                        "WHEN 'varbinary(max)' THEN " + java.sql.Types.VARBINARY + " " +
-                        "WHEN 'varchar' THEN " + java.sql.Types.VARCHAR + " " +
-                        "WHEN 'varchar(max)' THEN " + java.sql.Types.VARCHAR + " " +
-                        "WHEN 'xml' THEN " + java.sql.Types.LONGVARCHAR + " " +
-                        "WHEN 'LONGNVARCHAR' THEN " + java.sql.Types.SQLXML + " " +
+                        "WHEN 'smalldatetime' THEN " + Types.TIMESTAMP + " " +
+                        "WHEN 'smallint' THEN " + Types.SMALLINT + " " +
+                        "WHEN 'smallmoney' THEN " + Types.DECIMAL + " " +
+                        "WHEN 'text' THEN " + Types.LONGVARCHAR + " " +
+                        "WHEN 'time' THEN " + Types.TIME + " " +
+                        "WHEN 'timestamp' THEN " + Types.BINARY + " " +
+                        "WHEN 'tinyint' THEN " + Types.TINYINT + " " +
+                        "WHEN 'udt' THEN " + Types.VARBINARY + " " +
+                        "WHEN 'uniqueidentifier' THEN " + Types.CHAR + " " +
+                        "WHEN 'varbinary' THEN " + Types.VARBINARY + " " +
+                        "WHEN 'varbinary(max)' THEN " + Types.VARBINARY + " " +
+                        "WHEN 'varchar' THEN " + Types.VARCHAR + " " +
+                        "WHEN 'varchar(max)' THEN " + Types.VARCHAR + " " +
+                        "WHEN 'xml' THEN " + Types.LONGVARCHAR + " " +
+                        "WHEN 'LONGNVARCHAR' THEN " + Types.SQLXML + " " +
                         "ELSE " + Types.OTHER + " END AS data_type, " +
                         "CASE WHEN c.is_nullable = 'true' THEN 1 ELSE 0 END AS NULLABLE, " +
                         "10 as NUM_PREC_RADIX, " +
@@ -1527,7 +1527,7 @@ public class JdbcDatabaseSnapshot extends DatabaseSnapshot {
                             sql += " and table_name='" + tableName + "'";
                         }
                     } else if ((database instanceof MySQLDatabase) || (database instanceof HsqlDatabase) || (database
-                            instanceof MariaDBDatabase)) {
+                            instanceof MariaDBDatabase) || (database instanceof DMDatabase)) {
                         sql = "select CONSTRAINT_NAME, TABLE_NAME "
                                 + "from " + database.getSystemSchema() + ".table_constraints "
                                 + "where constraint_schema='" + jdbcCatalogName + "' "
@@ -1702,6 +1702,7 @@ public class JdbcDatabaseSnapshot extends DatabaseSnapshot {
         if (string == null) {
             return null;
         }
+
         return string
                 .replace("%", "\\%")
                 .replace("_", "\\_");

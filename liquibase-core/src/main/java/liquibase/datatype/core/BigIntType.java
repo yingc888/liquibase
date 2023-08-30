@@ -7,7 +7,6 @@ import liquibase.database.core.*;
 import liquibase.datatype.DataTypeInfo;
 import liquibase.datatype.DatabaseDataType;
 import liquibase.datatype.LiquibaseDataType;
-import liquibase.exception.DatabaseException;
 import liquibase.statement.DatabaseFunction;
 
 import java.util.Locale;
@@ -44,7 +43,7 @@ public class BigIntType extends LiquibaseDataType {
         if (database instanceof SybaseDatabase) {
             return new DatabaseDataType("BIGINT");
         }
-        if (database instanceof MSSQLDatabase) {
+        if (database instanceof MSSQLDatabase || (database instanceof DMDatabase)) {
             return new DatabaseDataType(database.escapeDataTypeName("bigint"));
         }
         if (database instanceof MySQLDatabase) {

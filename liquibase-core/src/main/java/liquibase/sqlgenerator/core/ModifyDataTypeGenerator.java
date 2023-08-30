@@ -80,6 +80,7 @@ public class ModifyDataTypeGenerator extends AbstractSqlGenerator<ModifyDataType
     protected String getModifyString(Database database) {
         if ((database instanceof SybaseASADatabase) || (database instanceof SybaseDatabase) || (database instanceof
             MySQLDatabase) || (database instanceof OracleDatabase) || (database instanceof InformixDatabase)
+                || (database instanceof DMDatabase)
                 ) {
             return "MODIFY";
         } else {
@@ -97,7 +98,7 @@ public class ModifyDataTypeGenerator extends AbstractSqlGenerator<ModifyDataType
         } else if ((database instanceof SybaseASADatabase) || (database instanceof SybaseDatabase) || (database
             instanceof MSSQLDatabase) || (database instanceof MySQLDatabase) || (database instanceof HsqlDatabase) ||
             (database instanceof H2Database) || (database instanceof OracleDatabase) || (database instanceof
-            InformixDatabase)) {
+            InformixDatabase) || (database instanceof DMDatabase)) {
             return " ";
         } else {
             return " TYPE ";
